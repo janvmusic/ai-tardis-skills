@@ -73,7 +73,9 @@ function help() {
   console.log('  frontend-expert   React + TypeScript UI/UX guidance')
   console.log('  rails-expert      Rails application patterns and best practices')
   console.log('  unravel           Stress-test a plan via relentless design interviews')
-  console.log('')
+}
+
+function tardis() {
   console.log('           ___')
   console.log('          | |')
   console.log('          | |')
@@ -99,5 +101,6 @@ switch (command) {
   case 'list':    list();          break
   case 'install': install(skillName); break
   case 'remove':  remove(skillName);  break
+  case 'tardis':  tardis();        break
   default:        help();          break
 }
