@@ -1,6 +1,6 @@
 {
   "name": "ai-tardis-skills",
-  "version": "1.0.14",
+  "version": "1.1.0",
   "description": "CLI to manage AI skills for Claude Code",
   "bin": {
     "tardis-ai": "bin/cli.js"
