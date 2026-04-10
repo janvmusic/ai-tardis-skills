@@ -48,8 +48,8 @@ Ask: **"Shall we proceed with this release plan?"** — MUST wait for explicit c
 
 1. Run `npm pack --dry-run` and show the full file list to the user
 2. Ask: **"These are the files that will be published. Push complete. Ready to publish to npm?"** — MUST wait for explicit confirmation
-3. Run `npm publish`
-4. Confirm success and show the user the published package URL: `https://www.npmjs.com/package/ai-tardis-skills`
+3. Trigger the `release.yml` GitHub Actions workflow by running: `gh workflow run release.yml`
+4. Confirm the workflow was triggered and show the user the Actions URL to monitor progress: `https://github.com/janvmusic/ai-tardis-skills/actions`
 
 ## Notes
 
