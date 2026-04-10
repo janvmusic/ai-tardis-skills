@@ -1,6 +1,6 @@
 {
   "name": "ai-tardis-skills",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CLI to manage AI skills for Claude Code",
   "bin": {
     "tardis-ai": "./bin/cli.js"
@@ -12,6 +12,11 @@
   "engines": {
     "node": ">=14"
   },
-  "keywords": ["claude", "claude-code", "ai", "skills"],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ai",
+    "skills"
+  ],
   "license": "MIT"
 }
