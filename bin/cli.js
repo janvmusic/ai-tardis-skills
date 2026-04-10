@@ -17,9 +17,15 @@ function list() {
 }
 
 function install(skill) {
-  if (!skill) {
-    console.error('Usage: tardis-ai install <skill-name>')
-    process.exit(1)
+  if (!skill || skill === 'all') {
+    const skills = fs.readdirSync(SKILLS_SRC).filter(f =>
+      fs.statSync(path.join(SKILLS_SRC, f)).isDirectory()
+    )
+    skills.forEach(s => {
+      copyDir(path.join(SKILLS_SRC, s), path.join(SKILLS_DEST, s))
+      console.log(`Installed "${s}" to .claude/skills/${s}`)
+    })
+    return
   }
   const src = path.join(SKILLS_SRC, skill)
   if (!fs.existsSync(src)) {
@@ -63,7 +69,7 @@ function help() {
   console.log('')
   console.log('Commands:')
   console.log('  list              Show available skills')
-  console.log('  install <skill>   Install a skill to .claude/skills/')
+  console.log('  install [skill]   Install a skill to .claude/skills/ (omit or use "all" to install all)')
   console.log('  remove <skill>    Remove an installed skill')
   console.log('')
   console.log('Skills:')
@@ -101,6 +107,6 @@ switch (command) {
   case 'list':    list();          break
   case 'install': install(skillName); break
   case 'remove':  remove(skillName);  break
-  case 'tardis':  tardis();        break
+  case 'sexy':    tardis();        break
   default:        help();          break
 }
