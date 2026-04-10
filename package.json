@@ -3,7 +3,7 @@
   "version": "1.0.9",
   "description": "CLI to manage AI skills for Claude Code",
   "bin": {
-    "tardis-ai": "./bin/cli.js"
+    "tardis-ai": "bin/cli.js"
   },
   "files": [
     "bin/",
