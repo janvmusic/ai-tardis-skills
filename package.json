@@ -18,6 +18,10 @@
     "ai",
     "skills"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/janvmusic/ai-tardis-skills"
+  },
   "license": "MIT",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
