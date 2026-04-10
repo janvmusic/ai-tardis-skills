@@ -9,9 +9,10 @@ Create a focused, single-line commit following conventional commit conventions.
 
 ## Instructions
 
-1. **Analyze changes**: Run `git status` and `git diff` to understand what was modified
-2. **Stage only modified files**: Add files individually by name. NEVER use `git add -A` or `git add .`
-3. **Write commit message**: Follow the conventional commit format as a single line
+1. **Get latest changes**: Run `git pull` and validate that main is up to date
+2. **Analyze changes**: Run `git status` and `git diff` to understand what was modified
+3. **Stage only modified files**: Add files individually by name. NEVER use `git add -A` or `git add .`
+4. **Write commit message**: Follow the conventional commit format as a single line
 
 ## Conventional Commit Format
 
