@@ -1,0 +1,56 @@
+name: Update Github Version
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read package.json version
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Get latest release tag
+        id: latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag=$(gh release list --limit 1 --json tagName --jq '.[0].tagName // ""')
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Compare versions
+        id: compare
+        run: |
+          pkg_version="${{ steps.pkg.outputs.version }}"
+          latest_tag="${{ steps.latest.outputs.tag }}"
+          latest_version="${latest_tag#v}"
+
+          if [ -z "$latest_version" ]; then
+            echo "No existing release found — will create v$pkg_version"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          elif [ "$(printf '%s\n' "$latest_version" "$pkg_version" | sort -V | tail -n1)" = "$pkg_version" ] && [ "$pkg_version" != "$latest_version" ]; then
+            echo "package.json ($pkg_version) > latest release ($latest_version) — will create release"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "package.json ($pkg_version) is not greater than latest release ($latest_version) — skipping"
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create release
+        if: steps.compare.outputs.should_release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.pkg.outputs.version }}" \
+            --title "v${{ steps.pkg.outputs.version }}" \
+            --generate-notes
