@@ -1,6 +1,6 @@
 {
-  "name": "@janvmusic/ai-tardis-skills",
-  "version": "1.2.2",
+  "name": "ai-tardis-skills",
+  "version": "1.2.5",
   "description": "CLI to manage AI skills for Claude Code",
   "bin": {
     "tardis-ai": "bin/cli.js"
@@ -23,8 +23,12 @@
     "url": "https://github.com/janvmusic/ai-tardis-skills"
   },
   "license": "MIT",
+  "scripts": {
+    "release:npm": "npm publish --registry https://registry.npmjs.org/",
+    "release:github": "bash scripts/publish-github.sh"
+  },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
+    "registry": "https://registry.npmjs.org/",
     "access": "public"
   }
 }
