@@ -79,6 +79,7 @@ function help() {
   console.log('  frontend-expert   React + TypeScript UI/UX guidance')
   console.log('  rails-expert      Rails application patterns and best practices')
   console.log('  unravel           Stress-test a plan via relentless design interviews')
+  console.log('  root-cause-investigator  Apply 5-Why methodology to find root causes of bugs and errors')
 }
 
 function tardis() {
