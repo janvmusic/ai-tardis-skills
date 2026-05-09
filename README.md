@@ -12,6 +12,7 @@ Repository of skill used by different AIs. Currently here's the list and descrip
 - **[rails-expert](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/rails-expert/SKILL.md)**: Use when building, designing, or reviewing any part of a Rails application. ALWAYS invoke for models, controllers, migrations, routes, serializers, policies, specs, or any Rails-related task.
 - **[frontend-expert](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/frontend-expert/SKILL.md)**: Use when building, designing, or reviewing any part of a React + TypeScript application. ALWAYS invoke for UI and UX.
 - **[unravel](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/unravel/SKILL.md)**: Interview the user relentlessly about a plan or design until reaching shared understanding, resolving each branch of the decision tree. Use when user wants to stress-test a plan, get grilled on their design, or mentions "unravel".
+- **[root-cause-investigator](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/root-cause-investigator/SKILL.md)**: Use when the user reports an error, bug, or unexpected behavior. Applies the 5-Why methodology to identify the root cause before proposing solutions.
 
 ## Installation
 
