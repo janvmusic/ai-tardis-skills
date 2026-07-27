@@ -4,9 +4,39 @@ const fs = require('fs')
 const path = require('path')
 
 const SKILLS_SRC = path.join(__dirname, '..', 'skills')
-const SKILLS_DEST = path.join(process.cwd(), '.claude', 'skills')
 
-const [,, command, skillName] = process.argv
+const AI_TARGETS = {
+  claude: path.join('.claude', 'skills'),
+  opencode: path.join('.opencode', 'skill'),
+  agents: path.join('.agents', 'skills'),
+}
+const DEFAULT_AI = 'claude'
+
+const rawArgs = process.argv.slice(2)
+
+// Extract --ai=<name> (or --ai <name>) from anywhere in the args
+let ai = DEFAULT_AI
+const positional = []
+for (let i = 0; i < rawArgs.length; i++) {
+  const arg = rawArgs[i]
+  if (arg === '--ai') {
+    ai = rawArgs[++i]
+  } else if (arg.startsWith('--ai=')) {
+    ai = arg.slice('--ai='.length)
+  } else {
+    positional.push(arg)
+  }
+}
+
+const [command, skillName] = positional
+
+function resolveDest() {
+  if (!ai || !AI_TARGETS[ai]) {
+    console.error(`Unknown AI "${ai || ''}". Valid options: ${Object.keys(AI_TARGETS).join(', ')}`)
+    process.exit(1)
+  }
+  return path.join(process.cwd(), AI_TARGETS[ai])
+}
 
 function list() {
   const skills = fs.readdirSync(SKILLS_SRC).filter(f =>
@@ -17,13 +47,15 @@ function list() {
 }
 
 function install(skill) {
+  const dest = resolveDest()
+  const destLabel = AI_TARGETS[ai]
   if (!skill || skill === 'all') {
     const skills = fs.readdirSync(SKILLS_SRC).filter(f =>
       fs.statSync(path.join(SKILLS_SRC, f)).isDirectory()
     )
     skills.forEach(s => {
-      copyDir(path.join(SKILLS_SRC, s), path.join(SKILLS_DEST, s))
-      console.log(`Installed "${s}" to .claude/skills/${s}`)
+      copyDir(path.join(SKILLS_SRC, s), path.join(dest, s))
+      console.log(`Installed "${s}" to ${destLabel}/${s} (${ai})`)
     })
     return
   }
@@ -32,23 +64,24 @@ function install(skill) {
     console.error(`Skill "${skill}" not found. Run "tardis-ai list" to see available skills.`)
     process.exit(1)
   }
-  const dest = path.join(SKILLS_DEST, skill)
-  copyDir(src, dest)
-  console.log(`Installed "${skill}" to .claude/skills/${skill}`)
+  copyDir(src, path.join(dest, skill))
+  console.log(`Installed "${skill}" to ${destLabel}/${skill} (${ai})`)
 }
 
 function remove(skill) {
   if (!skill) {
-    console.error('Usage: tardis-ai remove <skill-name>')
+    console.error('Usage: tardis-ai remove <skill-name> [--ai=<name>]')
     process.exit(1)
   }
-  const dest = path.join(SKILLS_DEST, skill)
-  if (!fs.existsSync(dest)) {
-    console.error(`Skill "${skill}" is not installed.`)
+  const dest = resolveDest()
+  const destLabel = AI_TARGETS[ai]
+  const target = path.join(dest, skill)
+  if (!fs.existsSync(target)) {
+    console.error(`Skill "${skill}" is not installed for ${ai}.`)
     process.exit(1)
   }
-  fs.rmSync(dest, { recursive: true })
-  console.log(`Removed "${skill}" from .claude/skills/${skill}`)
+  fs.rmSync(target, { recursive: true })
+  console.log(`Removed "${skill}" from ${destLabel}/${skill} (${ai})`)
 }
 
 function copyDir(src, dest) {
@@ -69,8 +102,14 @@ function help() {
   console.log('')
   console.log('Commands:')
   console.log('  list              Show available skills')
-  console.log('  install [skill]   Install a skill to .claude/skills/ (omit or use "all" to install all)')
+  console.log('  install [skill]   Install a skill (omit or use "all" to install all)')
   console.log('  remove <skill>    Remove an installed skill')
+  console.log('')
+  console.log('Options:')
+  console.log('  --ai=<name>       Target AI: claude (default), opencode, agents')
+  console.log('                    claude   -> .claude/skills')
+  console.log('                    opencode -> .opencode/skill')
+  console.log('                    agents   -> .agents/skills')
   console.log('')
   console.log('Skills:')
   console.log('  code-review              Thorough code reviews on branch changes')
