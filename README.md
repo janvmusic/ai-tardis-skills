@@ -25,15 +25,28 @@ npm install -g ai-tardis-skills
 ## Usage
 
 ```bash
-tardis-ai list                   # Show available skills
-tardis-ai install <skill-name>   # Install a skill to .claude/skills/
-tardis-ai remove <skill-name>    # Remove an installed skill
+tardis-ai list                            # Show available skills
+tardis-ai install <skill-name>            # Install a skill (defaults to Claude)
+tardis-ai install <skill-name> --ai=opencode  # Install for a specific AI
+tardis-ai remove <skill-name> [--ai=...]  # Remove an installed skill
 ```
+
+### Selecting the AI
+
+Use `--ai=<name>` to choose where skills are installed. Defaults to `claude`.
+
+| AI         | Install path      |
+| ---------- | ----------------- |
+| `claude`   | `.claude/skills`  |
+| `opencode` | `.opencode/skill` |
+| `agents`   | `.agents/skills`  |
 
 ### Example
 
 ```bash
 tardis-ai install rails-expert
+tardis-ai install rails-expert --ai=opencode
 ```
 
-This copies the skill to `.claude/skills/rails-expert/` in your current project.
+The first command copies the skill to `.claude/skills/rails-expert/`; the
+second installs it to `.opencode/skill/rails-expert/` in your current project.
