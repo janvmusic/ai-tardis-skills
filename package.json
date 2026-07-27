@@ -24,8 +24,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "release:npm": "npm publish --registry https://registry.npmjs.org/",
-    "release:github": "bash scripts/publish-github.sh"
+    "release:npm": "npm publish --registry https://registry.npmjs.org/"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
