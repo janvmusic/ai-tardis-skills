@@ -81,6 +81,7 @@ function help() {
   console.log('  unravel                  Stress-test a plan via relentless design interviews')
   console.log('  root-cause-investigator  Apply 5-Why methodology to find root causes of bugs and errors')
   console.log('  read-jira-ticket         Load a Jira ticket via ACLI, summarize, and analyze as a senior dev/architect')
+  console.log('  plan-review              Staff Engineer + Architect review an implementation plan for readiness')
 }
 
 function tardis() {
