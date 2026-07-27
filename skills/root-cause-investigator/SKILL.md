@@ -1,6 +1,6 @@
 ---
 name: root-cause-investigator
-description: Use this skill when the user reports an error, bug, issue, or unexpected behavior in the codebase. This skill should be used proactively whenever the user mentions problems like 'this isn't working', 'getting an error', 'something is broken', or describes any malfunction. Examples: <example>Context: User reports a build failure. user: 'The build is failing with a webpack error' assistant: 'I'll use the root-cause-investigator skill to thoroughly analyze this build failure and identify the underlying cause.' <commentary>Since the user is reporting an error, use the root-cause-investigator skill to apply the 5-why methodology before proposing solutions.</commentary></example> <example>Context: User mentions unexpected behavior. user: 'The extension popup isn't showing the right data' assistant: 'Let me investigate this issue systematically using the root-cause-investigator skill to find the root cause.' <commentary>The user is describing unexpected behavior, so use the root-cause-investigator skill to dig deep into the issue.</commentary></example>
+description: Use this skill when the user reports an error, bug, issue, or unexpected behavior in the codebase. This skill should be used proactively whenever the user mentions problems like 'this isn't working', 'getting an error', 'something is broken', or describes any malfunction.
 ---
 
 # Root Cause Investigator
