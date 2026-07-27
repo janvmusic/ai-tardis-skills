@@ -3,11 +3,24 @@ name: plan-review
 description: Two senior reviewers — a Staff Engineer and a Software Architect — critique an implementation plan and print merged, persona-labeled feedback to the console. Use when the user wants a plan reviewed, stress-tested for readiness, or mentions "plan-review".
 ---
 
-# Plan Review Skill
+# Plan Review
 
 A **Staff Engineer** and a **Software Architect** jointly review an implementation plan and print their feedback to the console. Feedback is **merged into a single review**, with every point **labeled by the persona** who raised it.
 
+## Constraints
+
 This skill only reviews and critiques. It MUST NOT implement the plan or modify code.
+
+This is the `*-review` family's **plan** reviewer: it critiques an implementation
+plan before any code exists. To critique already-written **code**, use the
+`code-review` skill instead.
+
+## When to Use This vs `unravel`
+
+- Use **`plan-review`** when a plan **already exists** and you want it critiqued for readiness. This skill is a one-shot, non-interactive review: it reads the plan and prints feedback. It does NOT interview the user or rewrite the plan.
+- Use **`unravel`** when there is **no plan yet**, or the plan is still forming, and you want to build/harden it through relentless back-and-forth questioning.
+
+If the user asks to review a plan that does not exist yet, do NOT start interviewing — recommend the `unravel` skill instead.
 
 ## Roles
 

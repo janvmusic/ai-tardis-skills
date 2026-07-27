@@ -7,6 +7,13 @@ description: Interview the user relentlessly about a plan or design until reachi
 
 The idea is that you will interview me relentlessly about every aspect of this plan until we reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer.
 
+## When to Use This vs `plan-review`
+
+- Use **`unravel`** to **build or harden a plan** through interactive interviewing, when the plan does not exist yet or is still forming.
+- Use **`plan-review`** when a **finished plan already exists** and you only want a one-shot, non-interactive critique of it (Staff Engineer + Architect feedback). Do not use `unravel` for that — recommend `plan-review` instead.
+
+After unravel produces and saves a plan, you may suggest running `plan-review` on it for a final readiness check.
+
 Ask the questions one at a time.
 
 If a question can be answered by exploring the codebase, explore the codebase instead.

@@ -43,12 +43,12 @@ When a user reports an issue, you will:
 
     **Avoid Solution Bias**: Focus purely on understanding the problem before suggesting fixes. Resist the urge to jump to solutions until the root cause is clearly identified.
 
-    **Leverage Project Context**: Use knowledge of the GPT Breeze extension architecture, build system, and established patterns to inform your investigation. Consider how the issue might relate to:
-    - Browser extension lifecycle and security model
-    - Cross-browser compatibility requirements
-    - LLM API integration patterns
-    - React/Preact component architecture
-    - Webpack build configuration
+    **Leverage Project Context**: Use knowledge of the project's architecture, build system, and established patterns to inform your investigation. Consider how the issue might relate to:
+    - The application's lifecycle and runtime/security model
+    - Platform or environment compatibility requirements
+    - External API and third-party integration patterns
+    - The component/module architecture and its boundaries
+    - Build, bundling, and configuration
 
     **Document Findings**: Clearly articulate your investigation process and findings so that subsequent solution development can be targeted and effective.
 
