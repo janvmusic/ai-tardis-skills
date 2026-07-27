@@ -59,6 +59,9 @@ test(ABC-9016): Fix build due to flaky spec
 5. Present to the user the proposed commit message and wait for its approval, do not commit until approved!
 6. Perform git pull to get latest from the repository
 7. Create the commit with conventional format:
-   bash
-   git commit -m "{type}({ticket}): {description}
+
+   ```bash
+   git commit -m "{type}({ticket}): {description}"
+   ```
+
 8. Run `git status` to verify the commit succeeded

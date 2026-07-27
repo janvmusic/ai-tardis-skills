@@ -73,13 +73,14 @@ function help() {
   console.log('  remove <skill>    Remove an installed skill')
   console.log('')
   console.log('Skills:')
-  console.log('  code-review       Thorough code reviews on branch changes')
-  console.log('  commit            Git commits with conventional commit format')
-  console.log('  create-pr         GitHub Pull Requests with structured descriptions')
-  console.log('  frontend-expert   React + TypeScript UI/UX guidance')
-  console.log('  rails-expert      Rails application patterns and best practices')
-  console.log('  unravel           Stress-test a plan via relentless design interviews')
+  console.log('  code-review              Thorough code reviews on branch changes')
+  console.log('  commit                   Git commits with conventional commit format')
+  console.log('  create-pr                GitHub Pull Requests with structured descriptions')
+  console.log('  frontend-expert          React + TypeScript UI/UX guidance')
+  console.log('  rails-expert             Rails application patterns and best practices')
+  console.log('  unravel                  Stress-test a plan via relentless design interviews')
   console.log('  root-cause-investigator  Apply 5-Why methodology to find root causes of bugs and errors')
+  console.log('  read-jira-ticket         Load a Jira ticket via ACLI, summarize, and analyze as a senior dev/architect')
 }
 
 function tardis() {
