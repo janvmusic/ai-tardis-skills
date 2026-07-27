@@ -37,7 +37,12 @@ For this task, you and I are going to be a team. The hats you are going to be us
 1. I'll give you a summary of what kind of work I want to do.
 2. There should not be any ambiguity; if there are or you detect an unclear requirement, your duty is to ask questions to clarify these situations. 
 3. Once you are ready, you will document the plan to implement the new feature or project.
-   - Depending on the preferences, you can ask as well if you need the plan in the console, as a markdown or any other format.
+   - Use the `question` tool to ask in which format I want the plan (console, markdown, or another format).
+4. Ask whether to save the plan to a file.
+   - Use the `question` tool. Put the default save option **first**: save to `artifacts/{ticket}/plan.md`, where `{ticket}` is the ticket number (e.g. `artifacts/PROJ-1234/plan.md`).
+   - If no ticket number is known, ask for it, or fall back to a short kebab-case slug derived from the plan's title.
+   - If I decline, keep the plan in the console only and do not write any file.
+   - When saving, create the `artifacts/{ticket}/` directory if it does not exist.
 5. If the project is growing in scope and complexity, then provide insights on how we can split it into different smaller projects. 
 6. Explain the requirements to be handled by an AI Agent or a JR Developer
 
