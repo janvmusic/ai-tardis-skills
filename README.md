@@ -1,8 +1,13 @@
 # Tardis Skills
 
+[![npm version](https://img.shields.io/npm/v/ai-tardis-skills.svg)](https://www.npmjs.com/package/ai-tardis-skills)
+
 ![Tardis](src/tardis.jpg)
 
 Repository of skill used by different AIs. Currently here's the list and description of each skill
+
+Published on npm as **[ai-tardis-skills](https://www.npmjs.com/package/ai-tardis-skills)** — install the
+`tardis-ai` CLI globally and pull any skill into your project.
 
 ## Skills Available
 
@@ -18,6 +23,8 @@ Repository of skill used by different AIs. Currently here's the list and descrip
 
 ## Installation
 
+Available on npm: <https://www.npmjs.com/package/ai-tardis-skills>
+
 ```bash
 npm install -g ai-tardis-skills
 ```
@@ -30,6 +37,53 @@ tardis-ai install <skill-name>            # Install a skill (defaults to Claude)
 tardis-ai install <skill-name> --ai=opencode  # Install for a specific AI
 tardis-ai remove <skill-name> [--ai=...]  # Remove an installed skill
 ```
+
+### Install with a prompt
+
+If you'd rather let the agent do it, paste one of these prompts into your AI
+coding tool. Each one installs the CLI and copies the skills into the right
+folder for that agent.
+
+**Claude Code** — installs to `.claude/skills`:
+
+```text
+Install the Tardis skills in this project.
+
+1. Run: npx -y ai-tardis-skills@latest list
+2. Ask me which skills I want, or install all of them if I say "all".
+3. Run: npx -y ai-tardis-skills@latest install <skill> --ai=claude
+4. Confirm the skills landed in .claude/skills/ and tell me how to invoke them.
+
+Package: https://www.npmjs.com/package/ai-tardis-skills
+```
+
+**OpenCode** — installs to `.opencode/skill`:
+
+```text
+Install the Tardis skills in this project.
+
+1. Run: npx -y ai-tardis-skills@latest list
+2. Ask me which skills I want, or install all of them if I say "all".
+3. Run: npx -y ai-tardis-skills@latest install <skill> --ai=opencode
+4. Confirm the skills landed in .opencode/skill/ and tell me how to invoke them.
+
+Package: https://www.npmjs.com/package/ai-tardis-skills
+```
+
+**Codex** (or any AGENTS.md-based agent) — installs to `.agents/skills`:
+
+```text
+Install the Tardis skills in this project.
+
+1. Run: npx -y ai-tardis-skills@latest list
+2. Ask me which skills I want, or install all of them if I say "all".
+3. Run: npx -y ai-tardis-skills@latest install <skill> --ai=agents
+4. Confirm the skills landed in .agents/skills/ and reference them from AGENTS.md.
+
+Package: https://www.npmjs.com/package/ai-tardis-skills
+```
+
+Use `install all` in step 3 to grab every skill at once.
 
 ### Selecting the AI
 
