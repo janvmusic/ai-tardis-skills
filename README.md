@@ -29,6 +29,24 @@ Available on npm: <https://www.npmjs.com/package/ai-tardis-skills>
 npm install -g ai-tardis-skills
 ```
 
+### Without installing
+
+Any npm-compatible client can run the CLI directly — no global install:
+
+```bash
+npx ai-tardis-skills list       # npm
+yarn dlx ai-tardis-skills list  # Yarn 2+ (Yarn 1: use npx)
+pnpm dlx ai-tardis-skills list  # pnpm
+bunx ai-tardis-skills list      # Bun
+```
+
+You can also run straight from this repository, skipping the registry
+entirely — useful for trying unreleased skills on `main`:
+
+```bash
+npx github:janvmusic/ai-tardis-skills list
+```
+
 ## Usage
 
 ```bash
