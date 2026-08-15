@@ -1,0 +1,27 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ai-tardis-skills",
+  "description": "Skills for Claude Code and other AI coding agents",
+  "owner": {
+    "name": "Jorge Nunez",
+    "url": "https://github.com/janvmusic"
+  },
+  "plugins": [
+    {
+      "name": "tardis-ai",
+      "displayName": "Tardis Skills",
+      "description": "Repository of skills used by different AIs: code review, conventional commits, PR creation, Rails and frontend expertise, plan stress-testing, root cause analysis, and Jira ticket loading.",
+      "category": "development",
+      "author": {
+        "name": "Jorge Nunez",
+        "url": "https://github.com/janvmusic"
+      },
+      "homepage": "https://github.com/janvmusic/ai-tardis-skills",
+      "repository": "https://github.com/janvmusic/ai-tardis-skills",
+      "license": "MIT",
+      "source": "./",
+      "skills": ["./skills/"],
+      "strict": false
+    }
+  ]
+}
