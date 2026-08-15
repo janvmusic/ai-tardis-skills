@@ -29,6 +29,16 @@ Available on npm: <https://www.npmjs.com/package/ai-tardis-skills>
 npm install -g ai-tardis-skills
 ```
 
+### Homebrew
+
+```bash
+brew tap janvmusic/tardis https://github.com/janvmusic/ai-tardis-skills
+brew install tardis-ai
+```
+
+The formula installs the published npm package, so it needs `node` (Homebrew
+pulls it in automatically). Upgrade with `brew upgrade tardis-ai`.
+
 ### Without installing
 
 Any npm-compatible client can run the CLI directly — no global install:
@@ -68,6 +78,19 @@ config and refresh with `/plugin update tardis-ai`.
 
 This route is Claude Code only — for OpenCode, Codex, and other agents use the
 `tardis-ai` CLI above.
+
+#### How plugin updates work
+
+The marketplace entry pins no `version`, so Claude Code resolves the plugin to
+the current commit on `main`. Two consequences worth knowing:
+
+- Plugin users receive every push to `main`, including through background
+  auto-updates — there is no release step gating them.
+- The npm package moves on a different cadence: it only publishes when a `v*`
+  tag is pushed.
+
+Refresh the catalog with `/plugin marketplace update`, and update an installed
+plugin with `/plugin update tardis-ai`.
 
 ## Usage
 
