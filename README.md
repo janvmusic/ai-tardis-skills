@@ -4,10 +4,10 @@
 
 ![Tardis](src/tardis.jpg)
 
-Repository of skill used by different AIs. Currently here's the list and description of each skill
-
-Published on npm as **[ai-tardis-skills](https://www.npmjs.com/package/ai-tardis-skills)** — install the
-`tardis-ai` CLI globally and pull any skill into your project.
+Repository of skills used by different AIs. Published on npm as
+**[ai-tardis-skills](https://www.npmjs.com/package/ai-tardis-skills)** — install
+the `tardis-ai` CLI and pull any skill into your project. Below is the list and
+description of each skill.
 
 ## Skills Available
 
@@ -23,7 +23,7 @@ Published on npm as **[ai-tardis-skills](https://www.npmjs.com/package/ai-tardis
 
 ## Installation
 
-Available on npm: <https://www.npmjs.com/package/ai-tardis-skills>
+### npm
 
 ```bash
 npm install -g ai-tardis-skills
@@ -77,7 +77,7 @@ Nothing is copied into your project — the skills live in your Claude Code
 config and refresh with `/plugin update tardis-ai`.
 
 This route is Claude Code only — for OpenCode, Codex, and other agents use the
-`tardis-ai` CLI above.
+`tardis-ai` CLI.
 
 #### How plugin updates work
 
@@ -92,16 +92,7 @@ the current commit on `main`. Two consequences worth knowing:
 Refresh the catalog with `/plugin marketplace update`, and update an installed
 plugin with `/plugin update tardis-ai`.
 
-## Usage
-
-```bash
-tardis-ai list                            # Show available skills
-tardis-ai install <skill-name>            # Install a skill (defaults to Claude)
-tardis-ai install <skill-name> --ai=opencode  # Install for a specific AI
-tardis-ai remove <skill-name> [--ai=...]  # Remove an installed skill
-```
-
-### Install with a prompt
+### With a prompt
 
 If you'd rather let the agent do it, paste one of these prompts into your AI
 coding tool. Each one installs the CLI and copies the skills into the right
@@ -148,22 +139,29 @@ Package: https://www.npmjs.com/package/ai-tardis-skills
 
 Use `install all` in step 3 to grab every skill at once.
 
-### Selecting the AI
+## Installing Skills
 
-Use `--ai=<name>` to choose where skills are installed. Defaults to `claude`.
-
-| AI         | Install path      |
-| ---------- | ----------------- |
-| `claude`   | `.claude/skills`  |
-| `opencode` | `.opencode/skill` |
-| `agents`   | `.agents/skills`  |
-
-### Example
+The sections above install the `tardis-ai` CLI. Installing the skills
+themselves into a project is a separate step:
 
 ```bash
-tardis-ai install rails-expert
-tardis-ai install rails-expert --ai=opencode
+tardis-ai list                            # Show available skills
+tardis-ai install <skill-name>            # Install a skill (defaults to Claude)
+tardis-ai install <skill-name> --ai=opencode  # Install for a specific AI
+tardis-ai remove <skill-name> [--ai=...]  # Remove an installed skill
 ```
 
-The first command copies the skill to `.claude/skills/rails-expert/`; the
-second installs it to `.opencode/skill/rails-expert/` in your current project.
+Use `--ai=<name>` to choose where skills land. Omit it and they go to
+`.claude/skills`.
+
+| AI                          | Skills directory  |
+| --------------------------- | ----------------- |
+| `claude` (default)          | `.claude/skills`  |
+| `opencode`                  | `.opencode/skill` |
+| `agents` (Codex, AGENTS.md) | `.agents/skills`  |
+
+```bash
+tardis-ai install rails-expert                 # -> .claude/skills/rails-expert/
+tardis-ai install rails-expert --ai=opencode   # -> .opencode/skill/rails-expert/
+tardis-ai install all --ai=agents              # every skill -> .agents/skills/
+```
