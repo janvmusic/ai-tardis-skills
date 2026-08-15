@@ -2,8 +2,10 @@
 
 const fs = require('fs')
 const path = require('path')
+const https = require('https')
 
 const SKILLS_SRC = path.join(__dirname, '..', 'skills')
+const PKG = require('../package.json')
 
 const AI_TARGETS = {
   claude: path.join('.claude', 'skills'),
@@ -38,10 +40,21 @@ function resolveDest() {
   return path.join(process.cwd(), AI_TARGETS[ai])
 }
 
-function list() {
-  const skills = fs.readdirSync(SKILLS_SRC).filter(f =>
+function availableSkills() {
+  return fs.readdirSync(SKILLS_SRC).filter(f =>
     fs.statSync(path.join(SKILLS_SRC, f)).isDirectory()
   )
+}
+
+function installedSkills(dest) {
+  if (!fs.existsSync(dest)) return []
+  return fs.readdirSync(dest).filter(f =>
+    fs.statSync(path.join(dest, f)).isDirectory()
+  )
+}
+
+function list() {
+  const skills = availableSkills()
   console.log('Available skills:')
   skills.forEach(skill => console.log(`  - ${skill}`))
 }
@@ -50,10 +63,7 @@ function install(skill) {
   const dest = resolveDest()
   const destLabel = AI_TARGETS[ai]
   if (!skill || skill === 'all') {
-    const skills = fs.readdirSync(SKILLS_SRC).filter(f =>
-      fs.statSync(path.join(SKILLS_SRC, f)).isDirectory()
-    )
-    skills.forEach(s => {
+    availableSkills().forEach(s => {
       copyDir(path.join(SKILLS_SRC, s), path.join(dest, s))
       console.log(`Installed "${s}" to ${destLabel}/${s} (${ai})`)
     })
@@ -66,6 +76,95 @@ function install(skill) {
   }
   copyDir(src, path.join(dest, skill))
   console.log(`Installed "${skill}" to ${destLabel}/${skill} (${ai})`)
+}
+
+function update(skill) {
+  const dest = resolveDest()
+  const destLabel = AI_TARGETS[ai]
+  const available = availableSkills()
+  const installed = installedSkills(dest)
+
+  if (installed.length === 0) {
+    console.error(`No skills installed in ${destLabel} (${ai}). Run "tardis-ai install all" first.`)
+    process.exit(1)
+  }
+
+  let targets = installed
+  if (skill && skill !== 'all') {
+    if (!installed.includes(skill)) {
+      console.error(`Skill "${skill}" is not installed for ${ai}. Run "tardis-ai install ${skill}" first.`)
+      process.exit(1)
+    }
+    targets = [skill]
+  }
+
+  let updated = 0
+  const orphans = []
+  targets.forEach(s => {
+    if (!available.includes(s)) {
+      orphans.push(s)
+      return
+    }
+    const target = path.join(dest, s)
+    // Replace instead of merge so files dropped upstream don't linger.
+    fs.rmSync(target, { recursive: true, force: true })
+    copyDir(path.join(SKILLS_SRC, s), target)
+    console.log(`Updated "${s}" in ${destLabel}/${s} (${ai})`)
+    updated++
+  })
+
+  orphans.forEach(s =>
+    console.log(`Skipped "${s}" — no longer part of ai-tardis-skills. Remove it with "tardis-ai remove ${s}".`)
+  )
+
+  console.log(`${updated} skill${updated === 1 ? '' : 's'} updated to ai-tardis-skills v${PKG.version}.`)
+
+  const newSkills = available.filter(s => !installed.includes(s))
+  if (newSkills.length > 0) {
+    console.log(`New skills available: ${newSkills.join(', ')}. Install with "tardis-ai install <skill>".`)
+  }
+
+  notifyIfOutdated()
+}
+
+// Skills ship inside the package, so a stale CLI updates skills to stale
+// content. Best-effort notice — never blocks or fails the update.
+function notifyIfOutdated() {
+  const req = https.get(
+    'https://registry.npmjs.org/ai-tardis-skills/latest',
+    { timeout: 2000, headers: { accept: 'application/json' } },
+    res => {
+      if (res.statusCode !== 200) return res.resume()
+      let body = ''
+      res.on('data', chunk => (body += chunk))
+      res.on('end', () => {
+        try {
+          const latest = JSON.parse(body).version
+          if (latest && isNewer(latest, PKG.version)) {
+            console.log('')
+            console.log(`A newer ai-tardis-skills is available (v${PKG.version} -> v${latest}).`)
+            console.log('Update the CLI, then run "tardis-ai update" again:')
+            console.log('  npm install -g ai-tardis-skills@latest   # or: brew upgrade tardis-ai')
+          }
+        } catch (_) {
+          // Malformed response — nothing worth reporting.
+        }
+      })
+    }
+  )
+  req.on('timeout', () => req.destroy())
+  req.on('error', () => {})
+}
+
+function isNewer(a, b) {
+  const parse = v => String(v).split('-')[0].split('.').map(Number)
+  const [x, y] = [parse(a), parse(b)]
+  for (let i = 0; i < 3; i++) {
+    const left = x[i] || 0
+    const right = y[i] || 0
+    if (left !== right) return left > right
+  }
+  return false
 }
 
 function remove(skill) {
@@ -103,6 +202,7 @@ function help() {
   console.log('Commands:')
   console.log('  list              Show available skills')
   console.log('  install [skill]   Install a skill (omit or use "all" to install all)')
+  console.log('  update [skill]    Refresh installed skills (omit or use "all" for every one)')
   console.log('  remove <skill>    Remove an installed skill')
   console.log('')
   console.log('Options:')
@@ -148,6 +248,7 @@ function tardis() {
 switch (command) {
   case 'list':    list();          break
   case 'install': install(skillName); break
+  case 'update':  update(skillName);  break
   case 'remove':  remove(skillName);  break
   case 'sexy':    tardis();        break
   default:        help();          break
