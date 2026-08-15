@@ -28,3 +28,83 @@ jobs:
 
       - name: Publish
         run: npm publish
+
+  bump-formula:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      # The formula tracks the published tarball, so it can only be updated
+      # after the publish job succeeds. Commits land on main, not the tag.
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Resolve released version
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="$(node -p "require('./package.json').version")"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Download tarball and compute sha256
+        id: tarball
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          url="https://registry.npmjs.org/ai-tardis-skills/-/ai-tardis-skills-${version}.tgz"
+
+          # The registry can lag a few seconds behind a successful publish.
+          for attempt in $(seq 1 10); do
+            if curl -sfL "$url" -o package.tgz; then
+              break
+            fi
+            echo "Tarball not available yet (attempt $attempt) — retrying in 10s"
+            sleep 10
+          done
+
+          if [ ! -s package.tgz ]; then
+            echo "::error::$url never became available"
+            exit 1
+          fi
+
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(sha256sum package.tgz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Update formula
+        run: |
+          sed -i -E \
+            -e 's|^  url ".*"|  url "${{ steps.tarball.outputs.url }}"|' \
+            -e 's|^  sha256 ".*"|  sha256 "${{ steps.tarball.outputs.sha256 }}"|' \
+            Formula/tardis-ai.rb
+          rm -f package.tgz
+          git diff -- Formula/tardis-ai.rb
+
+      - name: Commit and push
+        run: |
+          if git diff --quiet -- Formula/tardis-ai.rb; then
+            echo "Formula already points at v${{ steps.version.outputs.version }} — nothing to commit"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/tardis-ai.rb
+          git commit -m "chore: bump homebrew formula to v${{ steps.version.outputs.version }}"
+
+          # main may have moved while the release ran.
+          for attempt in $(seq 1 3); do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on main"
+            git pull --rebase origin main
+          done
+
+          echo "::error::Could not push the formula bump to main"
+          exit 1
