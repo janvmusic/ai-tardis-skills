@@ -148,6 +148,7 @@ themselves into a project is a separate step:
 tardis-ai list                            # Show available skills
 tardis-ai install <skill-name>            # Install a skill (defaults to Claude)
 tardis-ai install <skill-name> --ai=opencode  # Install for a specific AI
+tardis-ai update [skill-name] [--ai=...]  # Refresh installed skills in place
 tardis-ai remove <skill-name> [--ai=...]  # Remove an installed skill
 ```
 
@@ -165,3 +166,32 @@ tardis-ai install rails-expert                 # -> .claude/skills/rails-expert/
 tardis-ai install rails-expert --ai=opencode   # -> .opencode/skill/rails-expert/
 tardis-ai install all --ai=agents              # every skill -> .agents/skills/
 ```
+
+## Updating Skills
+
+`update` re-syncs skills you already installed, leaving the rest of the project
+untouched:
+
+```bash
+tardis-ai update                  # every installed skill (defaults to Claude)
+tardis-ai update rails-expert     # just one skill
+tardis-ai update --ai=opencode    # every skill installed under .opencode/skill
+```
+
+Each skill folder is replaced rather than merged, so files removed upstream
+disappear instead of lingering — any local edits inside an installed skill are
+overwritten. Skills you never installed are left alone; `update` just lists them
+so you can pick them up with `install`. A skill that no longer exists upstream is
+reported and skipped, never deleted.
+
+Skills ship inside the npm package, so `update` copies whatever version of the
+CLI you have. Upgrade it first to get newly published skill content:
+
+```bash
+npm install -g ai-tardis-skills@latest   # or: brew upgrade tardis-ai
+tardis-ai update
+```
+
+`update` checks the registry and tells you when your CLI is behind. `npx` and
+`bunx` users are always on the version they invoked, so
+`npx ai-tardis-skills@latest update` is a single-step refresh.
