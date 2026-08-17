@@ -55,43 +55,6 @@ entirely — useful for trying unreleased skills on `main`:
 npx github:janvmusic/ai-tardis-skills list
 ```
 
-### As a Claude Code plugin
-
-Claude Code users can skip the CLI entirely and install every skill as a
-plugin:
-
-```bash
-/plugin marketplace add janvmusic/ai-tardis-skills
-/plugin install tardis-ai@ai-tardis-skills
-```
-
-All nine skills are then namespaced under `tardis-ai`:
-
-```text
-tardis-ai:commit
-tardis-ai:code-review
-tardis-ai:rails-expert
-```
-
-Nothing is copied into your project — the skills live in your Claude Code
-config and refresh with `/plugin update tardis-ai`.
-
-This route is Claude Code only — for OpenCode, Codex, and other agents use the
-`tardis-ai` CLI.
-
-#### How plugin updates work
-
-The marketplace entry pins no `version`, so Claude Code resolves the plugin to
-the current commit on `main`. Two consequences worth knowing:
-
-- Plugin users receive every push to `main`, including through background
-  auto-updates — there is no release step gating them.
-- The npm package moves on a different cadence: it only publishes when a `v*`
-  tag is pushed.
-
-Refresh the catalog with `/plugin marketplace update`, and update an installed
-plugin with `/plugin update tardis-ai`.
-
 ### With a prompt
 
 If you'd rather let the agent do it, paste one of these prompts into your AI
