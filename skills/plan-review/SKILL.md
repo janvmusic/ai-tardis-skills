@@ -34,7 +34,7 @@ Every feedback point MUST be prefixed with the persona tag `[Staff Engineer]` or
 The plan comes from the user.
 
 - If the user provided a plan (a file path, e.g. `artifacts/{ticket}/plan.md`, or pasted inline), read it.
-- If NO plan was provided, use the `question` tool to ask what to do. Offer these options first:
+- If NO plan was provided, ask what to do (see **Asking Questions** below). Offer these options first:
   - Provide the plan now (path or pasted text).
   - Run the `unravel` skill first to produce a plan, then review it.
 - Do NOT invent plan content. Everything reviewed MUST come from the plan the user supplies.
@@ -81,7 +81,23 @@ Guidelines:
 
 ## Asking Questions
 
-Use the `question` tool for any user input (locating the plan, choosing to run `unravel`), never plain prose, so the user can answer with a single click.
+Any user input (locating the plan, choosing to run `unravel`) MUST be asked as a **multiple choice** question.
+
+Use the interactive tool when the current CLI has one, so the user can answer with a single keystroke:
+
+| CLI | Tool |
+| --- | --- |
+| Claude Code | `AskUserQuestion` |
+| OpenCode | `question` |
+| Codex — Plan mode | its interactive choices selector (`request_user_input`) |
+| Codex — Default mode, or any other harness | none — use the text fallback |
+
+**Text fallback:** print the question, then a **numbered list** of options, and ask the user to reply with a number.
+
+Rules that hold in every CLI:
+
+- MUST NOT call a question tool that is not available in the current CLI. If you are unsure whether one exists, use the text fallback — it always works.
+- **MUST NOT answer your own question.** Never invent a plan, assume where the plan lives, or continue past an unanswered question. If the tool is missing or the call fails, fall back to text and wait for the reply.
 
 ## Notes
 

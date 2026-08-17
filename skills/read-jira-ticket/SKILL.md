@@ -26,7 +26,7 @@ For this task you are a **Senior Software Developer / Architect**. Read the tick
 
 1. **Get the ticket key.**
    - If the user provided a Jira ticket key (e.g. `PROJ-1234`), use it.
-   - If NO ticket was provided, ask for it using the `question` tool before proceeding. Do not guess.
+   - If NO ticket was provided, ask for it (see **Asking Questions** below) before proceeding. Do not guess.
 
 2. **Load the ticket into context** using `acli`:
 
@@ -40,13 +40,30 @@ For this task you are a **Senior Software Developer / Architect**. Read the tick
 
 4. **Analyze as a Senior Developer/Architect.** Briefly flag anything that stands out: unclear requirements, missing acceptance criteria, scope concerns, or technical risks.
 
-5. **Offer to unravel.** Ask the user (via the `question` tool) whether they want to start the `unravel` skill to stress-test and plan the work.
+5. **Offer to unravel.** Ask the user (see **Asking Questions** below) whether they want to start the `unravel` skill to stress-test and plan the work.
    - If yes, load and follow the `unravel` skill.
    - If no, stop and await further instruction.
 
 ## Asking Questions
 
-Always use the `question` tool for user input (ticket key, whether to unravel), never plain prose, so the user can answer with a single click.
+Any user input (ticket key, whether to unravel) MUST be asked as a **multiple choice** question where the answers are enumerable.
+
+Use the interactive tool when the current CLI has one, so the user can answer with a single keystroke:
+
+| CLI | Tool |
+| --- | --- |
+| Claude Code | `AskUserQuestion` |
+| OpenCode | `question` |
+| Codex — Plan mode | its interactive choices selector (`request_user_input`) |
+| Codex — Default mode, or any other harness | none — use the text fallback |
+
+**Text fallback:** print the question, then a **numbered list** of options, and ask the user to reply with a number.
+
+Rules that hold in every CLI:
+
+- MUST NOT call a question tool that is not available in the current CLI. If you are unsure whether one exists, use the text fallback — it always works.
+- **MUST NOT answer your own question.** Never guess a ticket key, assume the user wants to unravel, or continue past an unanswered question. If the tool is missing or the call fails, fall back to text and wait for the reply.
+- For a free-form value such as a ticket key, simply ask for it directly in one short line.
 
 ## Notes
 

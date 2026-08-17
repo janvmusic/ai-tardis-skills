@@ -20,14 +20,32 @@ If a question can be answered by exploring the codebase, explore the codebase in
 
 ## Asking Questions
 
-Ask every question using the `question` tool (multiple choice), never as plain prose, so I can answer with a single click. For each question:
+Every question MUST be **multiple choice**, never open-ended prose.
+
+**How to ask depends on the CLI you are running in.** Use the interactive tool when one exists, so I can answer with a single keystroke:
+
+| CLI | Tool |
+| --- | --- |
+| Claude Code | `AskUserQuestion` |
+| OpenCode | `question` |
+| Codex — Plan mode | its interactive choices selector (`request_user_input`) |
+| Codex — Default mode, or any other harness | none — use the text fallback |
+
+**Text fallback:** print the question, then a **numbered list** of options, and ask me to reply with a number.
+
+Rules that hold in every CLI:
+
+- MUST NOT call a question tool that is not available in the current CLI. If you are unsure whether one exists, use the text fallback — it always works.
+- **MUST NOT answer your own question.** Never assume a default, infer my preference, or continue past an unanswered question. If the tool is missing or the call fails, fall back to text and wait for my reply. A plan built on decisions you invented on my behalf is worse than no plan.
+
+For each question, regardless of the mechanism:
 
 - Provide the concrete options you see for that decision.
 - Put your recommended option **first** and append " (Recommended)" to its label.
-- In each option's description, give the one-line reasoning/trade-off for that choice.
-- Do NOT add "Other" or catch-all options — the tool already appends a "Type your own answer" escape hatch.
-- Before the tool call, write 1-3 sentences of context: what branch of the design tree we're on, why it matters, and what depends on it.
-- Use `multiple: true` only when several options can legitimately be combined (e.g. selecting which folders are in scope).
+- Give a one-line reasoning/trade-off for each option.
+- Do NOT add "Other" or catch-all options — the interactive tool already appends a "Type your own answer" escape hatch, and in the text fallback I can always type my own answer.
+- Before asking, write 1-3 sentences of context: what branch of the design tree we're on, why it matters, and what depends on it.
+- Allow multiple selections only when several options can legitimately be combined (e.g. selecting which folders are in scope). With the interactive tool use its multi-select option; in the text fallback say explicitly that I may pick more than one number.
 
 If a decision is genuinely open-ended (no enumerable options) or is better answered by reading the codebase, explore first and come back with a narrowed-down set of choices rather than an open question.
 
@@ -44,9 +62,10 @@ For this task, you and I are going to be a team. The hats you are going to be us
 1. I'll give you a summary of what kind of work I want to do.
 2. There should not be any ambiguity; if there are or you detect an unclear requirement, your duty is to ask questions to clarify these situations. 
 3. Once you are ready, you will document the plan to implement the new feature or project.
-   - Use the `question` tool to ask in which format I want the plan (console, markdown, or another format).
+   - The plan MUST follow **Plan Structure** below — every section, every time.
+   - Ask in which format I want the plan (console, markdown, or another format), following **Asking Questions** above. The format controls how the plan is *rendered*, never which sections it contains. A console plan is not an abridged plan.
 4. Ask whether to save the plan to a file.
-   - Use the `question` tool. Put the default save option **first**: save to `artifacts/{ticket}/plan.md`, where `{ticket}` is the ticket number (e.g. `artifacts/PROJ-1234/plan.md`).
+   - Ask following **Asking Questions** above. Put the default save option **first**: save to `artifacts/{ticket}/plan.md`, where `{ticket}` is the ticket number (e.g. `artifacts/PROJ-1234/plan.md`).
    - If no ticket number is known, ask for it, or fall back to a short kebab-case slug derived from the plan's title.
    - If I decline, keep the plan in the console only and do not write any file.
    - When saving, create the `artifacts/{ticket}/` directory if it does not exist.
