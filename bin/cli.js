@@ -196,6 +196,10 @@ function copyDir(src, dest) {
   }
 }
 
+function version() {
+  console.log(`tardis-ai v${PKG.version}`)
+}
+
 function help() {
   console.log('Usage: tardis-ai <command> [skill-name]')
   console.log('')
@@ -204,8 +208,10 @@ function help() {
   console.log('  install [skill]   Install a skill (omit or use "all" to install all)')
   console.log('  update [skill]    Refresh installed skills (omit or use "all" for every one)')
   console.log('  remove <skill>    Remove an installed skill')
+  console.log('  version           Print the installed tardis-ai version')
   console.log('')
   console.log('Options:')
+  console.log('  -v, --version     Print the installed tardis-ai version')
   console.log('  --ai=<name>       Target AI: claude (default), opencode, agents')
   console.log('                    claude   -> .claude/skills')
   console.log('                    opencode -> .opencode/skill')
@@ -251,5 +257,8 @@ switch (command) {
   case 'update':  update(skillName);  break
   case 'remove':  remove(skillName);  break
   case 'sexy':    tardis();        break
+  case 'version':
+  case '--version':
+  case '-v':      version();       break
   default:        help();          break
 }
