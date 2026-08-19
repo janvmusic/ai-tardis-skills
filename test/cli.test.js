@@ -197,6 +197,39 @@ describe('remove', () => {
   })
 })
 
+describe('delete (alias for remove)', () => {
+  it('deletes an installed skill', () => {
+    run('install', 'commit')
+    const { status, stdout } = run('delete', 'commit')
+
+    assert.equal(status, 0)
+    assert.match(stdout, /Removed "commit" from \.claude\/skills\/commit \(claude\)/)
+    assert.ok(!installed('commit'))
+  })
+
+  it('honours --ai', () => {
+    run('install', 'commit', '--ai=agents')
+    run('delete', 'commit', '--ai=agents')
+
+    assert.ok(!installed('commit', path.join('.agents', 'skills')))
+  })
+
+  it('fails when the skill is not installed', () => {
+    const { status, stderr } = run('delete', 'commit')
+
+    assert.equal(status, 1)
+    assert.match(stderr, /Skill "commit" is not installed for claude\./)
+  })
+
+  it('names the typed command in the usage error, not "remove"', () => {
+    const { status, stderr } = run('delete')
+
+    assert.equal(status, 1)
+    assert.match(stderr, /Usage: tardis-ai delete <skill-name> \[--ai=<name>\]/)
+    assert.doesNotMatch(stderr, /tardis-ai remove/)
+  })
+})
+
 describe('update', () => {
   it('refreshes an installed skill', () => {
     run('install', 'commit')
@@ -290,9 +323,15 @@ describe('help', () => {
     const { status, stdout } = run('help')
 
     assert.equal(status, 0)
-    for (const command of ['list', 'install', 'update', 'remove', 'version']) {
+    for (const command of ['list', 'install', 'update', 'remove', 'delete', 'version']) {
       assert.match(stdout, new RegExp(`^ {2}${command}\\b`, 'm'))
     }
+  })
+
+  it('documents delete as an alias for remove', () => {
+    const { stdout } = run('help')
+
+    assert.match(stdout, /^ {2}delete <skill> {4}Alias for remove$/m)
   })
 
   it('documents every --ai target', () => {
