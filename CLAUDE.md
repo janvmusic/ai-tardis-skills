@@ -39,6 +39,20 @@ description: { one-line description used for triggering and discovery }
 - For operational skills (commit, create-pr): require user approval before destructive or irreversible actions
 - For reference/expert skills (rails-expert, frontend-expert): provide detailed patterns and best practices
 
+### Communication
+
+- Be brief. Default to the shortest answer that fully covers the question.
+- Lead with the result or the decision; supporting detail comes after, and only
+  if it changes what the reader does next.
+- Prefer a short list or table over prose. Skip preamble, restatement of the
+  request, and closing summaries of what was just said.
+- Do not narrate process. Report what changed and what needs a decision.
+- Flag genuine problems plainly in a sentence — do not pad them into paragraphs.
+- **ELI5 on request.** When the user asks for "ELI5", explain it in plain
+  language with no jargon, using everyday analogies and short sentences. Offer
+  ELI5 when a topic is unavoidably technical and the user has not signalled
+  familiarity with it.
+
 ### Git & Commits
 
 - Follow conventional commit format: `{type}({ticket}): {description}`
