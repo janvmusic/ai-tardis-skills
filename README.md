@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/ai-tardis-skills.svg)](https://www.npmjs.com/package/ai-tardis-skills)
 
-![Tardis](src/tardis.jpg)
+![Tardis](src/tardis.png)
 
 Repository of skills used by different AIs. Published on npm as
 **[ai-tardis-skills](https://www.npmjs.com/package/ai-tardis-skills)** — install
