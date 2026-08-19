@@ -42,7 +42,7 @@ description: { one-line description used for triggering and discovery }
 ### Git & Commits
 
 - Follow conventional commit format: `{type}({ticket}): {description}`
-- Valid types: `feat`, `fix`, `refactor`, `docs`, `style`, `test`, `chore`, `perf`
+- Valid types: `feat`, `fix`, `refactor`, `docs`, `style`, `test`, `chore`, `perf`, `ci`
 - Keep commit messages under 72 characters, single-line, imperative mood, lowercase
   (a convention for humans — CI does not measure length)
 - Stage files individually — never use `git add -A`
