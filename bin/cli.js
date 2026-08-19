@@ -167,9 +167,9 @@ function isNewer(a, b) {
   return false
 }
 
-function remove(skill) {
+function remove(skill, invokedAs = 'remove') {
   if (!skill) {
-    console.error('Usage: tardis-ai remove <skill-name> [--ai=<name>]')
+    console.error(`Usage: tardis-ai ${invokedAs} <skill-name> [--ai=<name>]`)
     process.exit(1)
   }
   const dest = resolveDest()
@@ -208,6 +208,7 @@ function help() {
   console.log('  install [skill]   Install a skill (omit or use "all" to install all)')
   console.log('  update [skill]    Refresh installed skills (omit or use "all" for every one)')
   console.log('  remove <skill>    Remove an installed skill')
+  console.log('  delete <skill>    Alias for remove')
   console.log('  version           Print the installed tardis-ai version')
   console.log('')
   console.log('Options:')
@@ -255,7 +256,8 @@ switch (command) {
   case 'list':    list();          break
   case 'install': install(skillName); break
   case 'update':  update(skillName);  break
-  case 'remove':  remove(skillName);  break
+  case 'remove':
+  case 'delete':  remove(skillName, command); break
   case 'sexy':    tardis();        break
   case 'version':
   case '--version':
