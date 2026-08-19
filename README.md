@@ -159,3 +159,17 @@ tardis-ai update
 `update` checks the registry and tells you when your CLI is behind. `npx` and
 `bunx` users are always on the version they invoked, so
 `npx ai-tardis-skills@latest update` is a single-step refresh.
+
+## Development
+
+The CLI has no runtime dependencies, and neither do its tests — they run on
+Node's built-in test runner:
+
+```bash
+npm test
+```
+
+The spec in `test/cli.test.js` spawns `bin/cli.js` against a throwaway
+directory per test and asserts on stdout, stderr, exit codes, and the files
+left on disk. Running the tests needs Node 18+ (for `node:test`), though the
+published CLI still supports Node 14+.
