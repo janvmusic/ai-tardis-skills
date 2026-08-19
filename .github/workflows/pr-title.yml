@@ -1,4 +1,4 @@
-name: PR Title
+name: Validate PR title
 
 # The PR title is not just review furniture: with squash merging it becomes the
 # commit message on main verbatim, and `gh release create --generate-notes` in
@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   title:
+    name: Validate PR title
     runs-on: ubuntu-latest
 
     steps:
