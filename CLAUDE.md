@@ -44,7 +44,28 @@ description: { one-line description used for triggering and discovery }
 - Follow conventional commit format: `{type}({ticket}): {description}`
 - Valid types: `feat`, `fix`, `refactor`, `docs`, `style`, `test`, `chore`, `perf`
 - Keep commit messages under 72 characters, single-line, imperative mood, lowercase
+  (a convention for humans — CI does not measure length)
 - Stage files individually — never use `git add -A`
+
+### Pull Requests
+
+- PR titles follow the same conventional commit format as commits, and CI
+  validates the type and subject. Length is not checked.
+- The title matters beyond review: it becomes the squashed commit message on
+  `main` and feeds `--generate-notes` in the release workflow, so it lands in
+  published release notes verbatim.
+- `.github/pull_request_template.md` pre-fills every PR with Summary (including
+  a `Closes #` line), Steps to Test, and Demo. Fill in all three.
+
+### Testing
+
+- The CLI has a spec at `test/cli.test.js`. Run it with `npm test`.
+- It uses Node's built-in `node:test` runner and has no dependencies. Keep it
+  that way — the package ships with none, runtime or dev.
+- Tests spawn the real `bin/cli.js` against a temp directory, since the CLI runs
+  its `switch` at module load. Assert on stdout, stderr, exit code, and the
+  files left on disk.
+- Any change to `bin/cli.js` needs matching coverage in the spec.
 
 ## Adding a New Skill
 
