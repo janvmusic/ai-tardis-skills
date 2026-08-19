@@ -14,22 +14,16 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      # The suite uses node:test, so it needs Node 18+ even though the
-      # published CLI still supports Node 14+. Covering the range keeps the
-      # README's "Node 18+" claim honest.
-      matrix:
-        node-version: [18, 20, 22]
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Matches the version publish-npm.yml builds with. The suite needs
+      # Node 18+ for node:test; the published CLI still supports Node 14+.
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 22
 
       # No install step: the package has no dependencies, runtime or dev.
       - name: Run tests
