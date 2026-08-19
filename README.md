@@ -113,6 +113,7 @@ tardis-ai install <skill-name>            # Install a skill (defaults to Claude)
 tardis-ai install <skill-name> --ai=opencode  # Install for a specific AI
 tardis-ai update [skill-name] [--ai=...]  # Refresh installed skills in place
 tardis-ai remove <skill-name> [--ai=...]  # Remove an installed skill
+tardis-ai delete <skill-name> [--ai=...]  # Alias for remove
 ```
 
 Use `--ai=<name>` to choose where skills land. Omit it and they go to
