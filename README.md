@@ -168,12 +168,13 @@ a task, preferences say how to talk and how to write code across every task.
 
 ```
 personal/
-├── CLAUDE.md    # preferences for Claude Code
-└── AGENTS.md    # preferences for agents following the AGENTS.md convention
+├── CLAUDE.md    # preferences, the file to edit
+└── AGENTS.md -> CLAUDE.md   # same content for the AGENTS.md convention
 ```
 
-Both files carry the same content, one per convention. The CLI does not install
-them, so copy the one you need by hand:
+`AGENTS.md` is a symlink, so the two conventions cannot drift apart. Edit
+`CLAUDE.md`. The CLI does not install either one, so copy the name you need by
+hand:
 
 ```bash
 cp personal/CLAUDE.md ~/.claude/CLAUDE.md   # every project
