@@ -160,31 +160,9 @@ tardis-ai update
 `bunx` users are always on the version they invoked, so
 `npx ai-tardis-skills@latest update` is a single-step refresh.
 
-## Personal Preferences
-
-`personal/` holds the preference files that sit above the skills: tone,
-language rules, accuracy standards and coding conventions. Skills say how to do
-a task, preferences say how to talk and how to write code across every task.
-
-```
-personal/
-├── CLAUDE.md    # preferences, the file to edit
-└── AGENTS.md -> CLAUDE.md   # same content for the AGENTS.md convention
-```
-
-`AGENTS.md` is a symlink, so the two conventions cannot drift apart. Edit
-`CLAUDE.md`. The CLI does not install either one, so copy the name you need by
-hand:
-
-```bash
-cp personal/CLAUDE.md ~/.claude/CLAUDE.md   # every project
-cp personal/AGENTS.md ./AGENTS.md           # just this project
-```
-
-Treat this repository as the source of truth: edit the file here, then copy it
-out again.
-
 ## Development
+
+### Testing
 
 The CLI has no runtime dependencies, and neither do its tests — they run on
 Node's built-in test runner:
@@ -197,3 +175,24 @@ The spec in `test/cli.test.js` spawns `bin/cli.js` against a throwaway
 directory per test and asserts on stdout, stderr, exit codes, and the files
 left on disk. Running the tests needs Node 18+ (for `node:test`), though the
 published CLI still supports Node 14+.
+
+## Contribution
+
+Pick up an open issue at
+[janvmusic/ai-tardis-skills/issues](https://github.com/janvmusic/ai-tardis-skills/issues),
+or open one first if you are proposing something new.
+
+Then:
+
+1. Branch off `main` and make the change. New skills go in
+   `skills/{skill-name}/SKILL.md` with `name` and `description` frontmatter, and
+   get listed in this README.
+2. Run `npm test`. Any change to `bin/cli.js` needs matching coverage in
+   `test/cli.test.js`.
+3. Open a PR. Titles follow conventional commits (`feat`, `fix`, `refactor`,
+   `docs`, `style`, `test`, `chore`, `perf`, `ci`) and CI validates them. The
+   title becomes the squashed commit and lands in the release notes verbatim, so
+   write it for a reader.
+4. Fill in the PR template: Summary, Steps to Test, Demo.
+
+Do not edit `Formula/tardis-ai.rb`. The release workflow owns it.
