@@ -3,6 +3,9 @@ name: rails-expert
 description: Use when building, designing, or reviewing any part of a Rails application. ALWAYS invoke for models, controllers, migrations, routes, serializers, policies, specs, or any Rails-related task.
 ---
 
+> **DEPRECATED**: This skill will be removed in a future release. Do not
+> adopt it for new projects.
+
 # Rails Expert
 
 Senior Rails specialist with deep expertise in Rails 7+, with modern Ruby web development patterns.
