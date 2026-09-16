@@ -1,0 +1,35 @@
+schema_version: "1.1"
+name: polish-direct-instruction-mode
+plugins: ["../.."]
+runs: 3
+description: >
+  A direct "polish <path>: <instruction>" invocation must skip the
+  bad/good-example interview entirely, deriving the rule from the
+  instruction and the file's current content, then go straight to a
+  one-file summary.
+
+execution:
+  model: claude-sonnet-5
+  max_turns: 15
+  timeout_seconds: 300
+  allowed_tools: [Skill, Read, Glob]
+
+context:
+  scaffold_script: seed-repo.sh
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?polish"'
+  - name: does-not-ask-for-examples
+    type: regex
+    pattern: "(?=.*bad example)(?=.*good example)"
+    flags: is
+    match: not_contains
+    target: last_message
+  - name: proposes-full-path-import
+    type: regex
+    pattern: "import"
+    flags: i
+    target: last_message
