@@ -13,6 +13,7 @@ const AI_TARGETS = {
   agents: path.join('.agents', 'skills'),
 }
 const DEFAULT_AI = 'claude'
+const PRESERVED_ON_UPDATE = path.join('references', 'conventions.md')
 
 const rawArgs = process.argv.slice(2)
 
@@ -106,9 +107,15 @@ function update(skill) {
       return
     }
     const target = path.join(dest, s)
+    const preservedPath = path.join(target, PRESERVED_ON_UPDATE)
+    const preserved = fs.existsSync(preservedPath) ? fs.readFileSync(preservedPath) : null
     // Replace instead of merge so files dropped upstream don't linger.
     fs.rmSync(target, { recursive: true, force: true })
     copyDir(path.join(SKILLS_SRC, s), target)
+    if (preserved) {
+      fs.mkdirSync(path.dirname(preservedPath), { recursive: true })
+      fs.writeFileSync(preservedPath, preserved)
+    }
     console.log(`Updated "${s}" in ${destLabel}/${s} (${ai})`)
     updated++
   })

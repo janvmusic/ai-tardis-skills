@@ -5,18 +5,47 @@ description: Create a git commit with conventional commit format. Auto-loads whe
 
 # Git Commit Skill
 
-Create a focused, single-line commit following conventional commit conventions.
+Create a focused, single-line commit following this project's commit convention.
 
-## Instructions
+## Workflow
 
-1. **Get latest changes**: Run `git pull` and validate that main is up to date
-2. **Analyze changes**: Run `git status` and `git diff` to understand what was modified
-3. **Stage only modified files**: Add files individually by name. NEVER use `git add -A` or `git add .`
-4. **Write commit message**: Follow the conventional commit format as a single line
+1. **Load or establish the convention**: check whether `references/conventions.md`
+   exists next to this file.
+   - If it exists, read it and use its rules for the rest of this workflow —
+     do not ask about format again.
+   - If it does not exist, ask the user (multiple choice): "Do you want to
+     follow Conventional Commits? e.g. `feat(scope): add X` — or do you use a
+     different format?"
+     - **Conventional Commits**: write the "### Format" section onward from
+       "Default Convention" below (Format/Types/Rules/Examples only — not the
+       heading or this sentence) to `references/conventions.md`, creating the
+       `references/` directory if needed.
+     - **Different format**: ask the user to describe it, derive the
+       equivalent type list and rules for it, and write that to
+       `references/conventions.md` instead.
+2. **Analyze changes**: run `git status` and `git diff` to see what was
+   modified.
+3. **Check commit style**: run `git log --oneline -5` for recent style
+   continuity.
+4. **Sync with upstream**: run `git pull` (the current branch's upstream, not
+   `main`).
+5. **Stage only relevant files**: add files individually by name. NEVER use
+   `git add -A` or `git add .`. If unsure which files belong to the current
+   change, ask the user before staging.
+6. **Propose the commit message**: following the loaded convention, present it
+   to the user and wait for approval. Do not commit until approved.
+7. **Commit**: `git commit -m "{message}"`.
+8. **Verify**: run `git status` to confirm the commit succeeded.
 
-## Conventional Commit Format
+## Default Convention (Conventional Commits)
 
-{type}({ticket}): {description}
+The content from "### Format" below is what gets written to
+`references/conventions.md` when the user picks "Conventional Commits" in
+step 1 — nothing above this line is part of that file.
+
+### Format
+
+`{type}({ticket}): {description}`
 
 ### Types
 
@@ -31,16 +60,18 @@ Create a focused, single-line commit following conventional commit conventions.
 
 ### Rules
 
-- Message MUST be a single line (no multi-line messages)
-- Description should be lowercase, imperative mood ("add" not "added")
+- Message MUST be a single line — no multi-line bodies, no exceptions (this
+  includes `BREAKING CHANGE:` footers and `Closes #N`; put those in the PR
+  description instead)
+- Description is lowercase, imperative mood ("add" not "added")
 - No period at the end
-- Keep under 72 characters total
+- Aim for under 72 characters total; not enforced, just a guideline
 - NO HEREDOC (`cat <<EOF`) for commit messages
-- NO multi-line commit bodies
 - NO `Co-Authored-By` or other trailers
-- One commit may include a single planned work item plus its directly related follow-up test reshaping; do not split a coherent work item just to force smaller commits
+- One commit may include a single planned work item plus its directly related
+  follow-up test reshaping; do not split a coherent work item just to force
+  smaller commits
 - If no ticket is available, omit the scope: `feat: add book search endpoint`
-- If unsure which files belong to the current change, ask the user before staging
 
 ### Examples
 
@@ -48,20 +79,4 @@ feat(ABC-9012): add token usage tracking for AI providers
 refactor(ABC-9013): extract common validation logic
 chore(ABC-9014): update API endpoint documentation
 fix(ABC-9015): temporary fix for API
-test(ABC-9016): Fix build due to flaky spec
-
-## Execution Steps
-
-1. Run `git status` to see all changes
-2. Run `git diff` to understand the changes in detail
-3. Run `git log --oneline -5` to see recent commit style
-4. Stage ONLY the modified/relevant files: `git add <file1> <file2> ...`
-5. Present to the user the proposed commit message and wait for its approval, do not commit until approved!
-6. Perform git pull to get latest from the repository
-7. Create the commit with conventional format:
-
-   ```bash
-   git commit -m "{type}({ticket}): {description}"
-   ```
-
-8. Run `git status` to verify the commit succeeded
+test(ABC-9016): fix build due to flaky spec
