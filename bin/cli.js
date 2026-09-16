@@ -234,6 +234,7 @@ function help() {
   console.log('  code-review              Thorough code reviews on branch changes')
   console.log('  commit                   Git commits with conventional commit format')
   console.log('  create-pr                GitHub Pull Requests with structured descriptions')
+  console.log('  polish                   Clean up style and structure against your documented rules')
   console.log('  frontend-expert          React + TypeScript UI/UX guidance')
   console.log('  rails-expert             Rails application patterns and best practices')
   console.log('  unravel                  Stress-test a plan via relentless design interviews')
