@@ -251,6 +251,27 @@ describe('update', () => {
     assert.ok(installed('commit'))
   })
 
+  it('preserves a customized references/conventions.md across updates', () => {
+    run('install', 'commit')
+    const conventions = path.join(project, '.claude', 'skills', 'commit', 'references', 'conventions.md')
+    fs.mkdirSync(path.dirname(conventions), { recursive: true })
+    fs.writeFileSync(conventions, 'custom convention: no ticket scope required')
+
+    run('update', 'commit')
+
+    assert.equal(fs.readFileSync(conventions, 'utf8'), 'custom convention: no ticket scope required')
+    assert.ok(installed('commit'), 'the rest of the skill folder is still refreshed')
+  })
+
+  it('does not fabricate references/conventions.md when none exists', () => {
+    run('install', 'commit')
+
+    run('update', 'commit')
+
+    const conventions = path.join(project, '.claude', 'skills', 'commit', 'references', 'conventions.md')
+    assert.ok(!fs.existsSync(conventions), 'creating the convention file is the skill\'s job, not the CLI\'s')
+  })
+
   it('updates every installed skill when the name is omitted', () => {
     run('install', 'commit')
     run('install', 'code-review')
