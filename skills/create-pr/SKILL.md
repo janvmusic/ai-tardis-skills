@@ -7,16 +7,33 @@ description: Create a GitHub Pull Request with a structured, informative descrip
 
 Create a focused, well-structured pull request that gives reviewers full context.
 
-## Instructions
+## Workflow
 
-1. **Ask for ticket ID**: If not provided, ask the user for the ticket ID before proceeding
-2. **Create branch**: Create and checkout a branch using the ticket ID
-3. **Invoke commit skill**: Ensure all changes are committed using the `commit` skill
-4. **Analyze commits**: Run `git log origin/main..HEAD --oneline` to summarize what changed
-5. **Analyze diff**: Run `git diff origin/main..HEAD --stat` to understand scope of changes
-6. **Write PR**: Follow the structure below
-7. **Present and wait**: Show the proposed PR title and body and wait for approval
-8. **Create PR**: Mark as ready for review
+1. **Resolve the branch**: ask whether to use the current branch or create a
+   new one.
+   - Current branch: continue with it as-is.
+   - New branch: ask for ticket ID, type, and short description if not
+     already clear from context, then create and check it out using the
+     format in **Branch Naming Format** below.
+2. **Ensure changes are committed**: run `git status`. If there are
+   uncommitted changes, invoke the `commit` skill to stage and commit them.
+   If the working tree is clean, continue.
+3. **Resolve the title format**: see **PR Title Format** below.
+4. **Resolve the body template**: see **PR Body Template** below.
+5. **Analyze the change**: run `git log origin/main..HEAD --oneline` and
+   `git diff origin/main..HEAD --stat`.
+6. **Compose the PR**: fill in the resolved template with the title and body.
+7. **Resolve draft vs ready**: ask whether this PR should be a draft or ready
+   for review (default: ready for review).
+8. **Present and wait**: show the full title and body and wait for approval.
+   Do not create the PR until approved.
+9. **Create the PR**:
+
+   ```bash
+   gh pr create --title "{title}" --body "{body}" [--draft]
+   ```
+
+10. **Output the PR URL** once created.
 
 ## Branch Naming Format
 
@@ -35,72 +52,64 @@ refactor/BLA-303-extract-auth-concern
 - All lowercase
 - Hyphens as separators, no underscores
 - Short description mirrors the eventual PR title
-- Ask the user for the type and short description if not clear from context
-
-## Execution Steps
-
-### Phase 1 — Branch Setup
-
-1. Ask user for ticket ID if not already provided
-2. Ask user for branch type and short description if not clear from context
-3. Create and checkout the branch:
-
-```bash
-   git checkout -b {type}/{ticket-id}-{short-description}
-```
-
-4. Confirm branch was created:
-
-```bash
-   git branch --show-current
-```
-
-### Phase 2 — Commit
-
-1. Check working tree status:
-
-```bash
-   git status
-```
-
-2. If there are uncommitted changes, **invoke the `commit` skill** to
-   stage and commit them following conventional commit conventions
-3. If the working tree is clean, skip to Phase 3
-
-### Phase 3 — PR Creation
-
-1. Run `git log origin/main..HEAD --oneline` to see commits
-2. Run `git diff origin/main..HEAD --stat` to see changed files
-3. Compose PR title and body following the structure below
-4. Present the full PR to the user and wait for approval
-5. Create the PR as ready for review:
-
-```bash
-   gh pr create --title "{title}" --body "{body}"
-```
-
-6. Output the PR URL once created
 
 ## PR Title Format
 
-{type}({ticket-id}): {description}
+- If the `commit` skill is installed alongside this one, read
+  `../commit/references/conventions.md` and derive the title format from its
+  `{type}(scope): description` rule — same type list, same single-line,
+  lowercase, imperative-mood, no-trailing-period constraints.
+- If that file is not present (the `commit` skill isn't installed, or hasn't
+  been used yet in this project), fall back to this skill's own default:
+  `{type}({ticket-id}): {description}`, single line, under 72 characters as
+  guidance, lowercase imperative mood, no trailing period. If no ticket ID is
+  available, omit the scope: `{type}: {description}`.
 
-### Rules
+This keeps the PR title consistent with the project's commit convention
+without hardcoding a duplicate definition here — the PR title becomes the
+squashed commit on `main` and feeds `--generate-notes`, so it lands in
+published release notes verbatim.
 
-- Single line, under 72 characters
-- Lowercase imperative mood
-- No period at the end
+## PR Body Template
 
-## PR Body Structure
+1. Check `.github/pull_request_template.md`. If it exists, use it — fill in
+   its placeholders, do not ask anything.
+2. Else check `.github/PULL_REQUEST_TEMPLATE/*.md`. If any exist, use one —
+   do not ask anything.
+3. Else check whether `references/pr_template.md` exists next to this file.
+   If it exists, use it — do not ask anything.
+4. Else ask the user (multiple choice): "How should this PR's body be
+   structured?"
+   - **Use the default template**: write the **Default Template** below to
+     `references/pr_template.md` verbatim (everything from "### Sections"
+     onward, not this instruction), then use it.
+   - **Describe a custom format**: ask what sections/structure to use, write
+     the derived structure to `references/pr_template.md`, then use it.
+   - **Mirror an example PR**: ask for the PR's URL, fetch its body (e.g.
+     `gh pr view <url> --json body`), derive its section structure, write
+     that to `references/pr_template.md`, then use it.
+
+Whichever branch runs, the result is written to `references/pr_template.md`
+so this question is never asked again in the same project.
+
+## Default Template
+
+The content from "### Sections" below is what gets written to
+`references/pr_template.md` when the user picks "use the default template" —
+nothing above that line is part of the file.
+
+### Sections
 
 ```markdown
-## What
+## Summary
 
 Brief description of what this PR does. 1-3 sentences max.
 
+Closes #{ticket-id}
+
 ## Why
 
-Why this change is needed. Reference ticket: {ticket-id}
+Why this change is needed.
 
 ## How
 
@@ -108,10 +117,7 @@ Key technical decisions or approach. Skip if obvious from the diff.
 
 ## Testing
 
-How to verify this works. Include:
-
-- Relevant RSpec spec paths to run
-- Manual steps if needed
+How to verify this works. Manual steps if needed.
 
 ## Notes (optional)
 
@@ -121,13 +127,11 @@ deployment considerations.
 
 ## Rules
 
-- NEVER create the branch or PR without user approval at each phase
-- NEVER create the PR without first completing Phase 1 and Phase 2
-- NEVER duplicate commit logic — always delegate to the `commit` skill
+- NEVER create the branch or PR without user approval at each step
 - NEVER include unrelated changes in the description
-- ALWAYS invoke the `commit` skill before creating the PR
-- If working tree is clean, skip the commit skill and proceed to Phase 3
+- ALWAYS invoke the `commit` skill to handle uncommitted changes — never
+  duplicate its logic here
 - Keep the body scannable — use short paragraphs and bullet points
 - If `gh` CLI is not available, output the title and body for manual use
-- One PR per logical change — flag if commits appear to span multiple concerns
-- Always mark PR as ready for review, never as draft
+- One PR per logical change — flag if commits appear to span multiple
+  concerns
