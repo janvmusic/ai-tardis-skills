@@ -1,0 +1,29 @@
+schema_version: "1.1"
+name: create-pr-asks-when-no-template
+plugins: ["../.."]
+runs: 3
+description: >
+  With no .github template and no references/pr_template.md, create-pr
+  must ask how to structure the PR body (default / describe custom /
+  mirror an example PR) rather than picking silently.
+
+execution:
+  model: claude-sonnet-5
+  max_turns: 25
+  timeout_seconds: 300
+  allowed_tools: [Skill, Read, Glob]
+
+context:
+  scaffold_script: seed-repo.sh
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?create-pr"'
+  - name: asks-body-structure-question
+    type: regex
+    pattern: "(?=.*default)(?=.*mirror)"
+    flags: is
+    match: contains
+    target: last_message

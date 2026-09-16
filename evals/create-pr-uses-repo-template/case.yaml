@@ -1,0 +1,32 @@
+schema_version: "1.1"
+name: create-pr-uses-repo-template
+plugins: ["../.."]
+runs: 3
+description: >
+  When .github/pull_request_template.md exists in the project, create-pr
+  must not ask how to structure the PR body.
+
+execution:
+  model: claude-sonnet-5
+  max_turns: 25
+  timeout_seconds: 300
+  allowed_tools: [Skill, Read, Glob]
+
+context:
+  scaffold_script: seed-template.sh
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?create-pr"'
+  - name: does-not-ask-body-structure
+    type: regex
+    pattern: "(?=.*default)(?=.*mirror)"
+    flags: is
+    match: not_contains
+    target: last_message
+  - name: mentions_summary_section
+    type: regex
+    pattern: "## Summary"
+    target: last_message
