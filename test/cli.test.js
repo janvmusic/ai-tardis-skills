@@ -272,6 +272,27 @@ describe('update', () => {
     assert.ok(!fs.existsSync(conventions), 'creating the convention file is the skill\'s job, not the CLI\'s')
   })
 
+  it('preserves a customized references/pr_template.md across updates', () => {
+    run('install', 'create-pr')
+    const template = path.join(project, '.claude', 'skills', 'create-pr', 'references', 'pr_template.md')
+    fs.mkdirSync(path.dirname(template), { recursive: true })
+    fs.writeFileSync(template, 'custom PR template: Summary / Steps to Test / Demo')
+
+    run('update', 'create-pr')
+
+    assert.equal(fs.readFileSync(template, 'utf8'), 'custom PR template: Summary / Steps to Test / Demo')
+    assert.ok(installed('create-pr'), 'the rest of the skill folder is still refreshed')
+  })
+
+  it('does not fabricate references/pr_template.md when none exists', () => {
+    run('install', 'create-pr')
+
+    run('update', 'create-pr')
+
+    const template = path.join(project, '.claude', 'skills', 'create-pr', 'references', 'pr_template.md')
+    assert.ok(!fs.existsSync(template), 'creating the template file is the skill\'s job, not the CLI\'s')
+  })
+
   it('updates every installed skill when the name is omitted', () => {
     run('install', 'commit')
     run('install', 'code-review')
