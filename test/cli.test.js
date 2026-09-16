@@ -13,6 +13,8 @@ const AVAILABLE = fs
   .readdirSync(SKILLS_SRC)
   .filter(f => fs.statSync(path.join(SKILLS_SRC, f)).isDirectory())
 
+const DEPRECATED = ['frontend-expert', 'rails-expert']
+
 // cli.js runs its switch at module load, so every case is exercised by
 // spawning the real binary against a throwaway project directory.
 let project
@@ -84,21 +86,38 @@ describe('install', () => {
     assert.deepEqual(fs.readdirSync(dest).sort(), fs.readdirSync(src).sort())
   })
 
-  it('installs everything when the skill name is omitted', () => {
+  it('installs everything except deprecated skills when the skill name is omitted', () => {
     const { status } = run('install')
 
     assert.equal(status, 0)
     for (const skill of AVAILABLE) {
-      assert.ok(installed(skill), `${skill} should be installed`)
+      if (DEPRECATED.includes(skill)) {
+        assert.ok(!installed(skill), `${skill} is deprecated and should not be installed`)
+      } else {
+        assert.ok(installed(skill), `${skill} should be installed`)
+      }
     }
   })
 
-  it('installs everything for "all"', () => {
-    run('install', 'all')
+  it('installs everything except deprecated skills for "all"', () => {
+    const { stdout } = run('install', 'all')
 
     for (const skill of AVAILABLE) {
-      assert.ok(installed(skill), `${skill} should be installed`)
+      if (DEPRECATED.includes(skill)) {
+        assert.ok(!installed(skill), `${skill} is deprecated and should not be installed`)
+      } else {
+        assert.ok(installed(skill), `${skill} should be installed`)
+      }
     }
+    assert.match(stdout, /Skipped deprecated: .*\. Install by name if you still need one\./)
+  })
+
+  it('still installs a deprecated skill when named explicitly', () => {
+    const { status, stdout } = run('install', 'rails-expert')
+
+    assert.equal(status, 0)
+    assert.match(stdout, /Installed "rails-expert"/)
+    assert.ok(installed('rails-expert'))
   })
 
   it('rejects an unknown skill without creating anything', () => {
