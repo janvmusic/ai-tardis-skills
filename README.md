@@ -23,7 +23,7 @@ description of each skill.
 
 These skills are still being shaped by real use — behavior and file formats may change before they stabilize.
 
-- **[polish](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/polish/SKILL.md)**: Clean up style and structure in your own uncommitted changes against rules you've documented per language. Use when you say "polish this" or "clean this up". Never changes behavior and never hunts for bugs — use code-review for that.
+- **[polish](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/polish/SKILL.md)**: Clean up style and structure in the user's own uncommitted changes against rules the user has documented per language. Use when the user says "polish this", "clean this up", or wants a pass over code they (or an agent) just wrote before committing. Never changes behavior and never hunts for bugs — use code-review for that.
 
 ## Deprecated Skills
 
@@ -72,80 +72,63 @@ If you'd rather let the agent do it, paste one of these prompts into your AI
 coding tool. Each one installs the CLI and copies the skills into the right
 folder for that agent.
 
-**Claude Code** — installs to `.claude/skills`:
+**Claude Code**, **OpenCode**, or **Codex/AGENTS.md**: paste this in your
+coding agent's chat, it works the same for all three —
 
 ```text
 Install the Tardis skills in this project.
 
-1. Run: npx -y ai-tardis-skills@latest list
-2. Ask me which skills I want, or install all of them if I say "all".
-3. Run: npx -y ai-tardis-skills@latest install <skill> --ai=claude
-4. Confirm the skills landed in .claude/skills/ and tell me how to invoke them.
+1. Run: npx -y ai-tardis-skills@latest install
+2. Follow the prompts: pick Project or Global, pick your AI agent, then
+   check off the skills you want.
+3. Confirm the skills landed where the wizard said, and tell me how to
+   invoke each one.
 
 Package: https://www.npmjs.com/package/ai-tardis-skills
 ```
-
-**OpenCode** — installs to `.opencode/skill`:
-
-```text
-Install the Tardis skills in this project.
-
-1. Run: npx -y ai-tardis-skills@latest list
-2. Ask me which skills I want, or install all of them if I say "all".
-3. Run: npx -y ai-tardis-skills@latest install <skill> --ai=opencode
-4. Confirm the skills landed in .opencode/skill/ and tell me how to invoke them.
-
-Package: https://www.npmjs.com/package/ai-tardis-skills
-```
-
-**Codex** (or any AGENTS.md-based agent) — installs to `.agents/skills`:
-
-```text
-Install the Tardis skills in this project.
-
-1. Run: npx -y ai-tardis-skills@latest list
-2. Ask me which skills I want, or install all of them if I say "all".
-3. Run: npx -y ai-tardis-skills@latest install <skill> --ai=agents
-4. Confirm the skills landed in .agents/skills/ and reference them from AGENTS.md.
-
-Package: https://www.npmjs.com/package/ai-tardis-skills
-```
-
-Use `install all` in step 3 to grab every skill at once.
 
 ## Installing Skills
 
 The sections above install the `tardis-ai` CLI. Installing the skills
-themselves into a project is a separate step:
+themselves into a project (or globally) is a separate step, and is
+interactive:
 
 ```bash
-tardis-ai list                            # Show available skills
-tardis-ai install <skill-name>            # Install a skill (defaults to Claude)
-tardis-ai install <skill-name> --ai=opencode  # Install for a specific AI
-tardis-ai update [skill-name] [--ai=...]  # Refresh installed skills in place
-tardis-ai remove <skill-name> [--ai=...]  # Remove an installed skill
-tardis-ai delete <skill-name> [--ai=...]  # Alias for remove
+tardis-ai list              # Show available skills
+tardis-ai install           # Wizard: scope -> AI agent -> pick skills -> confirm
+tardis-ai remove            # Wizard: scope -> AI agent -> pick skills to remove -> confirm
+tardis-ai delete            # Alias for remove
+tardis-ai list --installed  # Show what's actually installed (--ai=<name> to target one)
 ```
 
-Use `--ai=<name>` to choose where skills land. Omit it and they go to
-`.claude/skills`.
+The wizard asks where to install: **Project** (this directory only) or
+**Global** (available in every project), then which AI agent, then lets you
+check off any combination of skills — deprecated ones are listed too, marked
+`(deprecated)`, since the wizard is the only way to install one now.
 
-| AI                          | Skills directory  |
-| --------------------------- | ----------------- |
-| `claude` (default)          | `.claude/skills`  |
-| `opencode`                  | `.opencode/skill` |
-| `agents` (Codex, AGENTS.md) | `.agents/skills`  |
+| AI                          | Project directory | Global directory            |
+| ---------------------------- | ------------------ | ---------------------------- |
+| `claude` (default)          | `.claude/skills`  | `~/.claude/skills`           |
+| `opencode`                  | `.opencode/skill` | `~/.config/opencode/skills` |
+| `agents` (Codex, AGENTS.md) | `.agents/skills`  | `~/.agents/skills`           |
+
+### Non-interactive / CI
+
+`install --yes` and `remove --yes` skip the wizard: `install --yes` adds every
+non-deprecated skill to the Project `--ai` target (`claude` by default),
+`remove --yes` removes everything installed there.
 
 ```bash
-tardis-ai install rails-expert                 # -> .claude/skills/rails-expert/
-tardis-ai install rails-expert --ai=opencode   # -> .opencode/skill/rails-expert/
-tardis-ai install all --ai=agents              # every skill -> .agents/skills/
+tardis-ai install --yes                 # every non-deprecated skill -> .claude/skills/
+tardis-ai install --yes --ai=opencode   # same, but -> .opencode/skill/
+tardis-ai remove --yes                  # remove everything installed -> .claude/skills/
 ```
 
 ## Updating Skills
 
 `update` re-syncs skills you already installed, leaving the rest of the project
-untouched:
+untouched. Unlike `install`/`remove`, it isn't wizard-based — it still takes
+an optional skill name directly:
 
 ```bash
 tardis-ai update                  # every installed skill (defaults to Claude)
@@ -175,8 +158,8 @@ tardis-ai update
 
 ### Testing
 
-The CLI has no runtime dependencies, and neither do its tests — they run on
-Node's built-in test runner:
+Tests run on Node's built-in test runner and have no dependencies of their
+own — they spawn the built CLI rather than importing its runtime dependency:
 
 ```bash
 npm test
@@ -184,8 +167,11 @@ npm test
 
 The spec in `test/cli.test.js` spawns `bin/cli.js` against a throwaway
 directory per test and asserts on stdout, stderr, exit codes, and the files
-left on disk. Running the tests needs Node 18+ (for `node:test`), though the
-published CLI still supports Node 14+.
+left on disk, plus a handful of direct unit tests against pure helpers
+exported from `bin/cli.js` (`copyDir`, `resolveDestFor`, `destLabelFor`). The
+interactive install/remove wizard's raw-mode UI itself isn't covered by
+specs — piped stdin isn't a real TTY — so changes there need manual testing.
+Node >= 20.12.0 is required (the CLI's `@clack/prompts` dependency needs it).
 
 ## Contribution
 
