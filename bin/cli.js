@@ -13,6 +13,7 @@ const AI_TARGETS = {
   agents: path.join('.agents', 'skills'),
 }
 const DEFAULT_AI = 'claude'
+const DEPRECATED_SKILLS = ['frontend-expert', 'rails-expert']
 const PRESERVED_ON_UPDATE = [
   path.join('references', 'conventions.md'),
   path.join('references', 'pr_template.md'),
@@ -68,9 +69,14 @@ function install(skill) {
   const destLabel = AI_TARGETS[ai]
   if (!skill || skill === 'all') {
     availableSkills().forEach(s => {
+      if (DEPRECATED_SKILLS.includes(s)) return
       copyDir(path.join(SKILLS_SRC, s), path.join(dest, s))
       console.log(`Installed "${s}" to ${destLabel}/${s} (${ai})`)
     })
+    const skipped = availableSkills().filter(s => DEPRECATED_SKILLS.includes(s))
+    if (skipped.length > 0) {
+      console.log(`Skipped deprecated: ${skipped.join(', ')}. Install by name if you still need one.`)
+    }
     return
   }
   const src = path.join(SKILLS_SRC, skill)
@@ -217,7 +223,7 @@ function help() {
   console.log('')
   console.log('Commands:')
   console.log('  list              Show available skills')
-  console.log('  install [skill]   Install a skill (omit or use "all" to install all)')
+  console.log('  install [skill]   Install a skill (omit or use "all" to install all, deprecated skills excluded unless named)')
   console.log('  update [skill]    Refresh installed skills (omit or use "all" for every one)')
   console.log('  remove <skill>    Remove an installed skill')
   console.log('  delete <skill>    Alias for remove')
@@ -234,6 +240,7 @@ function help() {
   console.log('  code-review              Thorough code reviews on branch changes')
   console.log('  commit                   Git commits with conventional commit format')
   console.log('  create-pr                GitHub Pull Requests with structured descriptions')
+  console.log('  polish                   Clean up style and structure against your documented rules')
   console.log('  frontend-expert          React + TypeScript UI/UX guidance')
   console.log('  rails-expert             Rails application patterns and best practices')
   console.log('  unravel                  Stress-test a plan via relentless design interviews')

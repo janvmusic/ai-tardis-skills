@@ -19,6 +19,12 @@ description of each skill.
 - **[read-jira-ticket](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/read-jira-ticket/SKILL.md)**: Load a Jira ticket into context via ACLI, give a brief summary, and reason about it as a Senior Software Developer/Architect. Use when the user references a Jira ticket, wants a ticket loaded, or mentions "read-jira-ticket".
 - **[plan-review](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/plan-review/SKILL.md)**: Two senior reviewers — a Staff Engineer and a Software Architect — critique an implementation plan and print merged, persona-labeled feedback to the console. Use when the user wants a plan reviewed, stress-tested for readiness, or mentions "plan-review".
 
+## Beta Skills
+
+These skills are still being shaped by real use — behavior and file formats may change before they stabilize.
+
+- **[polish](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/polish/SKILL.md)**: Clean up style and structure in your own uncommitted changes against rules you've documented per language. Use when you say "polish this" or "clean this up". Never changes behavior and never hunts for bugs — use code-review for that.
+
 ## Deprecated Skills
 
 These skills will be removed in a future release. Avoid adopting them for new projects.

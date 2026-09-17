@@ -1,0 +1,37 @@
+schema_version: "1.1"
+name: polish-asks-for-examples-when-no-rules
+plugins: ["../.."]
+runs: 3
+description: >
+  First-time invocation of polish for a language with no
+  .tardis/polish/{language}.md must stop and ask for a bad/good example
+  pair before applying anything. Language is given in the prompt to skip
+  past the (separate, always-asked) language-name question, so the run
+  can reach the actual behavior under test.
+
+execution:
+  model: claude-sonnet-5
+  max_turns: 15
+  timeout_seconds: 300
+  allowed_tools: [Skill, Read, Glob]
+
+context:
+  scaffold_script: seed-repo.sh
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?polish"'
+  - name: asks-for-bad-good-example
+    type: regex
+    pattern: "(?=.*bad)(?=.*good)"
+    flags: is
+    match: contains
+    target: last_message
+  - name: does-not-write-yet
+    type: regex
+    pattern: "if user"
+    target:
+      source: file
+      path: "user.rb"
