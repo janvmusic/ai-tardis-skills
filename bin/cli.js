@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
 const fs = require('fs')
+const os = require('os')
 const path = require('path')
 const https = require('https')
+const p = require('@clack/prompts')
 
 const SKILLS_SRC = path.join(__dirname, '..', 'skills')
 const PKG = require('../package.json')
@@ -11,6 +13,16 @@ const AI_TARGETS = {
   claude: path.join('.claude', 'skills'),
   opencode: path.join('.opencode', 'skill'),
   agents: path.join('.agents', 'skills'),
+}
+const GLOBAL_AI_TARGETS = {
+  claude: path.join(os.homedir(), '.claude', 'skills'),
+  opencode: path.join(os.homedir(), '.config', 'opencode', 'skills'),
+  agents: path.join(os.homedir(), '.agents', 'skills'),
+}
+const AGENT_LABELS = {
+  claude: 'Claude Code',
+  opencode: 'OpenCode',
+  agents: 'Codex / AGENTS.md',
 }
 const DEFAULT_AI = 'claude'
 const DEPRECATED_SKILLS = ['frontend-expert', 'rails-expert']
@@ -21,8 +33,9 @@ const PRESERVED_ON_UPDATE = [
 
 const rawArgs = process.argv.slice(2)
 
-// Extract --ai=<name> (or --ai <name>) from anywhere in the args
+// Extract --ai=<name> (or --ai <name>) and --yes/-y from anywhere in the args
 let ai = DEFAULT_AI
+let yes = false
 const positional = []
 for (let i = 0; i < rawArgs.length; i++) {
   const arg = rawArgs[i]
@@ -30,12 +43,14 @@ for (let i = 0; i < rawArgs.length; i++) {
     ai = rawArgs[++i]
   } else if (arg.startsWith('--ai=')) {
     ai = arg.slice('--ai='.length)
+  } else if (arg === '--yes' || arg === '-y') {
+    yes = true
   } else {
     positional.push(arg)
   }
 }
 
-const [command, skillName] = positional
+const [command, ...rest] = positional
 
 function resolveDest() {
   if (!ai || !AI_TARGETS[ai]) {
@@ -43,6 +58,18 @@ function resolveDest() {
     process.exit(1)
   }
   return path.join(process.cwd(), AI_TARGETS[ai])
+}
+
+function resolveDestFor(agent, scope) {
+  return scope === 'global'
+    ? GLOBAL_AI_TARGETS[agent]
+    : path.join(process.cwd(), AI_TARGETS[agent])
+}
+
+function destLabelFor(agent, scope) {
+  return scope === 'global'
+    ? `~${GLOBAL_AI_TARGETS[agent].slice(os.homedir().length)}`
+    : AI_TARGETS[agent]
 }
 
 function availableSkills() {
@@ -58,34 +85,98 @@ function installedSkills(dest) {
   )
 }
 
-function list() {
+function isInteractive() {
+  return Boolean(process.stdin.isTTY && process.stdout.isTTY) && !process.env.CI
+}
+
+function list(showInstalled) {
+  if (showInstalled) {
+    const dest = resolveDest()
+    const destLabel = AI_TARGETS[ai]
+    const installed = installedSkills(dest)
+    console.log(`Installed skills in ${destLabel} (${ai}):`)
+    if (installed.length === 0) console.log('  (none)')
+    installed.forEach(skill => console.log(`  - ${skill}`))
+    return
+  }
   const skills = availableSkills()
   console.log('Available skills:')
   skills.forEach(skill => console.log(`  - ${skill}`))
 }
 
-function install(skill) {
+// Non-interactive default: every non-deprecated skill, to the Project/--ai target.
+function installYes() {
   const dest = resolveDest()
   const destLabel = AI_TARGETS[ai]
-  if (!skill || skill === 'all') {
-    availableSkills().forEach(s => {
-      if (DEPRECATED_SKILLS.includes(s)) return
-      copyDir(path.join(SKILLS_SRC, s), path.join(dest, s))
-      console.log(`Installed "${s}" to ${destLabel}/${s} (${ai})`)
-    })
-    const skipped = availableSkills().filter(s => DEPRECATED_SKILLS.includes(s))
-    if (skipped.length > 0) {
-      console.log(`Skipped deprecated: ${skipped.join(', ')}. Install by name if you still need one.`)
-    }
-    return
+  availableSkills().forEach(s => {
+    if (DEPRECATED_SKILLS.includes(s)) return
+    copyDir(path.join(SKILLS_SRC, s), path.join(dest, s))
+    console.log(`Installed "${s}" to ${destLabel}/${s} (${ai})`)
+  })
+  const skipped = availableSkills().filter(s => DEPRECATED_SKILLS.includes(s))
+  if (skipped.length > 0) {
+    console.log(`Skipped deprecated: ${skipped.join(', ')}.`)
   }
-  const src = path.join(SKILLS_SRC, skill)
-  if (!fs.existsSync(src)) {
-    console.error(`Skill "${skill}" not found. Run "tardis-ai list" to see available skills.`)
-    process.exit(1)
-  }
-  copyDir(src, path.join(dest, skill))
-  console.log(`Installed "${skill}" to ${destLabel}/${skill} (${ai})`)
+}
+
+async function installWizard() {
+  p.intro('tardis-ai install')
+
+  const scope = await p.select({
+    message: 'Where do you want to install skills?',
+    options: [
+      { value: 'project', label: 'Project', hint: 'this directory only' },
+      { value: 'global', label: 'Global', hint: 'available in every project' },
+    ],
+  })
+  if (p.isCancel(scope)) return cancelWizard()
+
+  const agent = await p.select({
+    message: 'Which AI agent?',
+    options: [
+      { value: 'claude', label: AGENT_LABELS.claude },
+      { value: 'opencode', label: AGENT_LABELS.opencode },
+      { value: 'agents', label: AGENT_LABELS.agents },
+    ],
+  })
+  if (p.isCancel(agent)) return cancelWizard()
+
+  const skills = availableSkills()
+  const selected = await p.multiselect({
+    message: 'Which skills do you want to install?',
+    options: skills.map(s => ({
+      value: s,
+      label: DEPRECATED_SKILLS.includes(s) ? `${s} (deprecated)` : s,
+    })),
+    required: true,
+  })
+  if (p.isCancel(selected)) return cancelWizard()
+
+  const dest = resolveDestFor(agent, scope)
+  const destLabel = destLabelFor(agent, scope)
+
+  p.note(
+    [
+      `Scope: ${scope === 'global' ? 'Global' : 'Project'}`,
+      `Agent: ${AGENT_LABELS[agent]}`,
+      `Skills: ${selected.join(', ')}`,
+    ].join('\n'),
+    'Summary'
+  )
+
+  const confirmed = await p.confirm({ message: 'Install these skills?' })
+  if (p.isCancel(confirmed) || !confirmed) return cancelWizard('Nothing installed.')
+
+  selected.forEach(s => {
+    copyDir(path.join(SKILLS_SRC, s), path.join(dest, s))
+    p.log.success(`Installed "${s}" to ${destLabel}/${s} (${agent})`)
+  })
+  p.outro(`${selected.length} skill${selected.length === 1 ? '' : 's'} installed.`)
+}
+
+function cancelWizard(message = 'Cancelled. Nothing changed.') {
+  p.cancel(message)
+  process.exit(1)
 }
 
 function update(skill) {
@@ -95,14 +186,14 @@ function update(skill) {
   const installed = installedSkills(dest)
 
   if (installed.length === 0) {
-    console.error(`No skills installed in ${destLabel} (${ai}). Run "tardis-ai install all" first.`)
+    console.error(`No skills installed in ${destLabel} (${ai}). Run "tardis-ai install" first.`)
     process.exit(1)
   }
 
   let targets = installed
   if (skill && skill !== 'all') {
     if (!installed.includes(skill)) {
-      console.error(`Skill "${skill}" is not installed for ${ai}. Run "tardis-ai install ${skill}" first.`)
+      console.error(`Skill "${skill}" is not installed for ${ai}. Run "tardis-ai install" first.`)
       process.exit(1)
     }
     targets = [skill]
@@ -118,28 +209,28 @@ function update(skill) {
     const target = path.join(dest, s)
     const preserved = PRESERVED_ON_UPDATE
       .map(rel => path.join(target, rel))
-      .filter(p => fs.existsSync(p))
-      .map(p => [p, fs.readFileSync(p)])
+      .filter(filePath => fs.existsSync(filePath))
+      .map(filePath => [filePath, fs.readFileSync(filePath)])
     // Replace instead of merge so files dropped upstream don't linger.
     fs.rmSync(target, { recursive: true, force: true })
     copyDir(path.join(SKILLS_SRC, s), target)
-    preserved.forEach(([p, contents]) => {
-      fs.mkdirSync(path.dirname(p), { recursive: true })
-      fs.writeFileSync(p, contents)
+    preserved.forEach(([filePath, contents]) => {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true })
+      fs.writeFileSync(filePath, contents)
     })
     console.log(`Updated "${s}" in ${destLabel}/${s} (${ai})`)
     updated++
   })
 
   orphans.forEach(s =>
-    console.log(`Skipped "${s}" — no longer part of ai-tardis-skills. Remove it with "tardis-ai remove ${s}".`)
+    console.log(`Skipped "${s}" — no longer part of ai-tardis-skills. Remove it with "tardis-ai remove".`)
   )
 
   console.log(`${updated} skill${updated === 1 ? '' : 's'} updated to ai-tardis-skills v${PKG.version}.`)
 
   const newSkills = available.filter(s => !installed.includes(s))
   if (newSkills.length > 0) {
-    console.log(`New skills available: ${newSkills.join(', ')}. Install with "tardis-ai install <skill>".`)
+    console.log(`New skills available: ${newSkills.join(', ')}. Install with "tardis-ai install".`)
   }
 
   notifyIfOutdated()
@@ -185,20 +276,76 @@ function isNewer(a, b) {
   return false
 }
 
-function remove(skill, invokedAs = 'remove') {
-  if (!skill) {
-    console.error(`Usage: tardis-ai ${invokedAs} <skill-name> [--ai=<name>]`)
-    process.exit(1)
-  }
+// Non-interactive default: remove everything installed at the Project/--ai target.
+function removeYes(invokedAs) {
   const dest = resolveDest()
   const destLabel = AI_TARGETS[ai]
-  const target = path.join(dest, skill)
-  if (!fs.existsSync(target)) {
-    console.error(`Skill "${skill}" is not installed for ${ai}.`)
+  const installed = installedSkills(dest)
+  if (installed.length === 0) {
+    console.error(`No skills installed in ${destLabel} (${ai}).`)
     process.exit(1)
   }
-  fs.rmSync(target, { recursive: true })
-  console.log(`Removed "${skill}" from ${destLabel}/${skill} (${ai})`)
+  installed.forEach(s => {
+    fs.rmSync(path.join(dest, s), { recursive: true, force: true })
+    console.log(`Removed "${s}" from ${destLabel}/${s} (${ai})`)
+  })
+}
+
+async function removeWizard(invokedAs) {
+  p.intro(`tardis-ai ${invokedAs}`)
+
+  const scope = await p.select({
+    message: 'Remove from where?',
+    options: [
+      { value: 'project', label: 'Project', hint: 'this directory only' },
+      { value: 'global', label: 'Global', hint: 'shared across every project' },
+    ],
+  })
+  if (p.isCancel(scope)) return cancelWizard()
+
+  const agent = await p.select({
+    message: 'Which AI agent?',
+    options: [
+      { value: 'claude', label: AGENT_LABELS.claude },
+      { value: 'opencode', label: AGENT_LABELS.opencode },
+      { value: 'agents', label: AGENT_LABELS.agents },
+    ],
+  })
+  if (p.isCancel(agent)) return cancelWizard()
+
+  const dest = resolveDestFor(agent, scope)
+  const destLabel = destLabelFor(agent, scope)
+  const installed = installedSkills(dest)
+
+  if (installed.length === 0) {
+    p.outro(`No skills installed in ${destLabel} (${agent}).`)
+    return
+  }
+
+  const selected = await p.multiselect({
+    message: 'Which skills do you want to remove?',
+    options: installed.map(s => ({ value: s, label: s })),
+    required: true,
+  })
+  if (p.isCancel(selected)) return cancelWizard()
+
+  p.note(
+    [
+      `Scope: ${scope === 'global' ? 'Global' : 'Project'}`,
+      `Agent: ${AGENT_LABELS[agent]}`,
+      `Skills: ${selected.join(', ')}`,
+    ].join('\n'),
+    'Summary'
+  )
+
+  const confirmed = await p.confirm({ message: 'Remove these skills?' })
+  if (p.isCancel(confirmed) || !confirmed) return cancelWizard('Nothing removed.')
+
+  selected.forEach(s => {
+    fs.rmSync(path.join(dest, s), { recursive: true, force: true })
+    p.log.success(`Removed "${s}" from ${destLabel}/${s} (${agent})`)
+  })
+  p.outro(`${selected.length} skill${selected.length === 1 ? '' : 's'} removed.`)
 }
 
 function copyDir(src, dest) {
@@ -219,22 +366,22 @@ function version() {
 }
 
 function help() {
-  console.log('Usage: tardis-ai <command> [skill-name]')
+  console.log('Usage: tardis-ai <command> [options]')
   console.log('')
   console.log('Commands:')
-  console.log('  list              Show available skills')
-  console.log('  install [skill]   Install a skill (omit or use "all" to install all, deprecated skills excluded unless named)')
+  console.log('  list              Show available skills (--installed shows what\'s installed)')
+  console.log('  install           Interactive wizard: scope, AI agent, then pick skills')
   console.log('  update [skill]    Refresh installed skills (omit or use "all" for every one)')
-  console.log('  remove <skill>    Remove an installed skill')
-  console.log('  delete <skill>    Alias for remove')
+  console.log('  remove            Interactive wizard: scope, AI agent, then pick skills to remove')
+  console.log('  delete            Alias for remove')
   console.log('  version           Print the installed tardis-ai version')
   console.log('')
   console.log('Options:')
   console.log('  -v, --version     Print the installed tardis-ai version')
-  console.log('  --ai=<name>       Target AI: claude (default), opencode, agents')
-  console.log('                    claude   -> .claude/skills')
-  console.log('                    opencode -> .opencode/skill')
-  console.log('                    agents   -> .agents/skills')
+  console.log('  --yes, -y         Skip the install/remove wizard: every non-deprecated skill (install)')
+  console.log('                    or everything installed (remove), Project scope, --ai target')
+  console.log('  --ai=<name>       AI target for update/list --installed/--yes: claude (default), opencode, agents')
+  console.log('  --installed       With list: show what\'s installed instead of what\'s available')
   console.log('')
   console.log('Skills:')
   console.log('  code-review              Thorough code reviews on branch changes')
@@ -271,15 +418,71 @@ function tardis() {
   console.log('  ===================')
 }
 
-switch (command) {
-  case 'list':    list();          break
-  case 'install': install(skillName); break
-  case 'update':  update(skillName);  break
-  case 'remove':
-  case 'delete':  remove(skillName, command); break
-  case 'sexy':    tardis();        break
-  case 'version':
-  case '--version':
-  case '-v':      version();       break
-  default:        help();          break
+async function main() {
+  switch (command) {
+    case 'list':
+      list(rest.includes('--installed'))
+      break
+    case 'install':
+      if (rest.length > 0) {
+        console.error('tardis-ai install no longer takes a skill name. Run "tardis-ai install" for the interactive wizard, or "tardis-ai install --yes" to install every non-deprecated skill non-interactively.')
+        process.exit(1)
+      }
+      if (yes) {
+        installYes()
+      } else if (!isInteractive()) {
+        console.error('tardis-ai install requires an interactive terminal. Use "tardis-ai install --yes" in CI or non-interactive contexts.')
+        process.exit(1)
+      } else {
+        await installWizard()
+      }
+      break
+    case 'update':
+      update(rest[0])
+      break
+    case 'remove':
+    case 'delete':
+      if (rest.length > 0) {
+        console.error(`tardis-ai ${command} no longer takes a skill name. Run "tardis-ai ${command}" for the interactive wizard, or "tardis-ai ${command} --yes" to remove everything installed non-interactively.`)
+        process.exit(1)
+      }
+      if (yes) {
+        removeYes(command)
+      } else if (!isInteractive()) {
+        console.error(`tardis-ai ${command} requires an interactive terminal. Use "tardis-ai ${command} --yes" in CI or non-interactive contexts.`)
+        process.exit(1)
+      } else {
+        await removeWizard(command)
+      }
+      break
+    case 'sexy':
+      tardis()
+      break
+    case 'version':
+    case '--version':
+    case '-v':
+      version()
+      break
+    default:
+      help()
+      break
+  }
+}
+
+if (require.main === module) {
+  main().catch(err => {
+    console.error(err)
+    process.exit(1)
+  })
+}
+
+module.exports = {
+  AI_TARGETS,
+  GLOBAL_AI_TARGETS,
+  DEPRECATED_SKILLS,
+  availableSkills,
+  installedSkills,
+  copyDir,
+  resolveDestFor,
+  destLabelFor,
 }

@@ -80,26 +80,56 @@ description: { one-line description used for triggering and discovery }
 ### Testing
 
 - The CLI has a spec at `test/cli.test.js`. Run it with `npm test`.
-- It uses Node's built-in `node:test` runner and has no dependencies. Keep it
-  that way — the package ships with none, runtime or dev.
-- Tests spawn the real `bin/cli.js` against a temp directory, since the CLI runs
-  its `switch` at module load. Assert on stdout, stderr, exit code, and the
-  files left on disk.
-- Any change to `bin/cli.js` needs matching coverage in the spec.
+- It uses Node's built-in `node:test` runner. `test/cli.test.js` itself has no
+  dependencies — it only spawns the built CLI and never imports `bin/cli.js`'s
+  own runtime dependency directly (though it does `require` the file for a
+  handful of pure-function unit tests; see below).
+- Tests spawn the real `bin/cli.js` against a temp directory for CLI-surface
+  behavior (`bin/cli.js` runs its `switch` inside `main()`, guarded behind
+  `require.main === module`, so requiring the file never triggers it).
+  Assert on stdout, stderr, exit code, and the files left on disk.
+- A handful of pure helpers (`copyDir`, `resolveDestFor`, `destLabelFor`, ...)
+  are exported from `bin/cli.js` and unit-tested directly, without spawning a
+  process — use this for logic that doesn't need the interactive wizard.
+- Any change to `bin/cli.js` needs matching coverage in the spec. The
+  interactive install/remove wizard itself (raw-mode arrow-key UI) can't be
+  driven through `spawnSync`-based specs, since piped stdin isn't a real TTY —
+  that part is manual-test-only.
 
 ### The CLI
 
-- `bin/cli.js` is dependency-free Node using only stdlib. Keep it that way.
+- `bin/cli.js` has one real runtime dependency: `@clack/prompts`, for the
+  interactive install/remove wizard (scope, AI agent, skill checklist,
+  confirm). It requires Node >= 20.12.0 — reflected in `package.json`'s
+  `engines` field. Don't add further dependencies without good reason; this
+  one exists because hand-rolling raw-mode terminal UI from scratch is a much
+  larger maintenance burden than one well-maintained library.
 - Commands: `list`, `install`, `update`, `remove`/`delete`, `version`, `help`.
-- `--ai=<name>` selects where skills land, and is parsed from any argument
-  position in both `--ai=x` and `--ai x` forms:
+- `install` and `remove`/`delete` are wizard-only — no more `install <skill>`,
+  `install all`, or bulk positional names. Each always walks: scope (Project
+  or Global) → AI agent (Claude/OpenCode/Codex) → skill checklist → summary →
+  confirm. `install --yes` / `remove --yes` skip the wizard entirely and
+  reproduce the old default behavior non-interactively (Project scope, the
+  resolved `--ai` target; install = every non-deprecated skill, remove =
+  everything installed) — this is what CI and the specs use.
+- `update` is unchanged by the above — still takes an optional skill name and
+  operates on the Project/`--ai` target only.
+- `--ai=<name>` selects where skills land for `update`, `list --installed`,
+  and the `--yes` forms, parsed from any argument position in both `--ai=x`
+  and `--ai x` forms. The wizard asks for the agent interactively instead.
 
-  | AI                          | Directory         |
-  | --------------------------- | ----------------- |
-  | `claude` (default)          | `.claude/skills`  |
-  | `opencode`                  | `.opencode/skill` |
-  | `agents` (Codex, AGENTS.md) | `.agents/skills`  |
+  | AI                          | Project directory | Global directory            |
+  | --------------------------- | ----------------- | --------------------------- |
+  | `claude` (default)          | `.claude/skills`  | `~/.claude/skills`          |
+  | `opencode`                  | `.opencode/skill` | `~/.config/opencode/skills` |
+  | `agents` (Codex, AGENTS.md) | `.agents/skills`  | `~/.agents/skills`          |
 
+  Note OpenCode's Global path is XDG (`~/.config/opencode/skills`, plural),
+  not `~/.opencode/` — it genuinely differs in shape from its own Project
+  path, this isn't a typo.
+
+- `list --installed` shows what's actually present in the Project/`--ai`
+  target. Plain `list` is unchanged — names only, no descriptions or status.
 - `update` replaces a skill folder rather than merging, so files dropped
   upstream disappear. A skill that no longer exists upstream is reported and
   skipped, never deleted.
