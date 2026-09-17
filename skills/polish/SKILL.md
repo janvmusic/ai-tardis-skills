@@ -22,10 +22,7 @@ not catch, comment policy, idiomatic constructs — nothing else.
 
 Rules live in `.tardis/polish/{language}.md`, relative to the project root
 (cwd) — one file per language, checked into the project's own repo so a team
-shares the same rules. This is a different convention from `commit`'s or
-`create-pr`'s `references/*.md` (which live inside this skill's own installed
-folder and are per-installation, not team-shared) — do not conflate the two
-or "fix" one to match the other.
+shares the same rules.
 
 Each rules file is plain markdown: one entry per rule, each with a one-line
 rule statement plus the bad/good example pair it was derived from:
