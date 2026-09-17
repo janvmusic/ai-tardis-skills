@@ -72,8 +72,11 @@ jobs:
     # already current the job no-ops at the "Open PR" step.
     #
     # main is ruleset-protected (2 required status checks), so GITHUB_TOKEN
-    # can't push to it directly — this opens a PR instead, which someone still
-    # has to merge by hand.
+    # can't push to it directly — this opens a PR instead. That PR is also
+    # opened with a PAT (RELEASE_PR_TOKEN), not GITHUB_TOKEN: GitHub does not
+    # fire pull_request_target for events made with the default token, so the
+    # required "Validate PR title" check would never run and the PR would be
+    # permanently stuck. A PAT-authored PR is treated like any human's.
     needs: publish
     runs-on: ubuntu-latest
     permissions:
@@ -87,6 +90,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          token: ${{ secrets.RELEASE_PR_TOKEN }}
 
       - name: Download tarball and compute sha256
         id: tarball
@@ -122,7 +126,7 @@ jobs:
 
       - name: Open PR
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
         run: |
           version="${{ needs.publish.outputs.version }}"
 
