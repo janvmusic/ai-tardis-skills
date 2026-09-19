@@ -23,7 +23,7 @@ description of each skill.
 
 These skills are still being shaped by real use — behavior and file formats may change before they stabilize.
 
-- **[polish](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/polish/SKILL.md)**: Clean up style and structure in the user's own uncommitted changes against rules the user has documented per language. Use when the user says "polish this", "clean this up", or wants a pass over code they (or an agent) just wrote before committing. Never changes behavior and never hunts for bugs — use code-review for that.
+- **[polish](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/polish/SKILL.md)**: Clean up style and structure in a changelist — uncommitted changes by default, or a named path/file or a PR — against rules the user has documented per language, accumulating a rule set meant to eventually graduate into the project's AGENTS.md/CLAUDE.md. Use when the user says "polish this", "clean this up", or wants a pass over code they (or an agent) just wrote before committing, or over the files in a PR. Never changes behavior and never hunts for bugs — use code-review for that.
 
 ## Deprecated Skills
 

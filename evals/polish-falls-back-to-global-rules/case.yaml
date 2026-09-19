@@ -1,0 +1,34 @@
+schema_version: "1.1"
+name: polish-falls-back-to-global-rules
+plugins: ["../.."]
+runs: 3
+description: >
+  When no project-level .tardis/polish/{language}.md exists but a global
+  ~/.tardis/polish/{language}.md does, polish must use the global rule
+  instead of reporting no rules exist and asking for a bad/good example
+  pair.
+
+execution:
+  model: claude-sonnet-5
+  max_turns: 15
+  timeout_seconds: 300
+  allowed_tools: [Skill, Read, Glob]
+
+context:
+  scaffold_script: seed-repo.sh
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?polish"'
+  - name: does-not-ask-for-examples
+    type: regex
+    pattern: "(?=.*bad)(?=.*good)"
+    flags: is
+    match: not_contains
+    target: last_message
+  - name: proposes-early-return
+    type: regex
+    pattern: "return unless"
+    target: last_message
