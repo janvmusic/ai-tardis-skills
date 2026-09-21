@@ -99,7 +99,7 @@ jobs:
           url="https://registry.npmjs.org/ai-tardis-skills/-/ai-tardis-skills-${version}.tgz"
 
           # The registry can lag a few seconds behind a successful publish.
-          for attempt in $(seq 1 10); do
+          for attempt in $(seq 1 30); do
             if curl -sfL "$url" -o package.tgz; then
               break
             fi
