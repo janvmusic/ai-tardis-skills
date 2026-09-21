@@ -1,13 +1,22 @@
 ---
 name: polish
-description: Clean up style and structure in the user's own uncommitted changes against rules the user has documented per language. Use when the user says "polish this", "clean this up", or wants a pass over code they (or an agent) just wrote before committing. Never changes behavior and never hunts for bugs — use code-review for that.
+description: Clean up style and structure in a changelist — uncommitted changes by default, or a named path/file or a PR — against rules the user has documented per language, accumulating a rule set meant to eventually graduate into the project's AGENTS.md/CLAUDE.md. Use when the user says "polish this", "clean this up", or wants a pass over code they (or an agent) just wrote before committing, or over the files in a PR. Never changes behavior and never hunts for bugs — use code-review for that.
 ---
 
 # Polish Skill
 
-Apply user-documented style and structure rules to uncommitted changes.
-Naming, ordering, dead code, redundant branches, formatting the linter does
-not catch, comment policy, idiomatic constructs — nothing else.
+Apply user-documented style and structure rules to a changelist —
+uncommitted changes by default, or a named path/file or a PR's changed
+files. Naming, ordering, dead code, redundant branches, formatting the
+linter does not catch, comment policy, idiomatic constructs — nothing else.
+
+The point of recording rules in `.tardis/polish/{language}.md` rather than
+applying them ad hoc is to build a durable, example-backed rule set. Once a
+rule has proven itself over a few runs, its natural next step is promotion
+into the project's `AGENTS.md` or `CLAUDE.md`, so agents follow it from the
+start instead of needing a polish pass every time. That promotion is a
+manual, user-driven edit outside this skill — this skill only accumulates
+the candidates.
 
 ## Constraints
 
@@ -20,9 +29,16 @@ not catch, comment policy, idiomatic constructs — nothing else.
 
 ## Rules File
 
-Rules live in `.tardis/polish/{language}.md`, relative to the project root
-(cwd) — one file per language, checked into the project's own repo so a team
-shares the same rules.
+Rules live in `.tardis/polish/{language}.md`. Check two locations, in order:
+
+1. `.tardis/polish/{language}.md` relative to the project root (cwd) —
+   checked into the project's own repo so a team shares the same rules.
+2. `~/.tardis/polish/{language}.md` — global rules that apply across
+   projects.
+
+Use the first one found. New rules authored during a run (step 3 or step 7
+below) are always written to the project-level file, never the global one —
+promoting a rule to global is a manual, explicit action outside this skill.
 
 Each rules file is plain markdown: one entry per rule, each with a one-line
 rule statement plus the bad/good example pair it was derived from:
@@ -79,23 +95,31 @@ file to derive it from.
 
 ## Workflow
 
-1. **Resolve scope**: by default, use uncommitted changes — `git status` for
-   tracked modifications and untracked files, same signal the `commit` skill
-   reads. If the user names a path or file instead, use that.
+1. **Resolve scope**, in this order:
+   - An explicit path, file, or `@`-mention named by the user wins outright.
+   - A PR reference (a number like `PR #123` or `#123`, or a GitHub PR URL)
+     resolves via `gh pr diff <ref> --name-only` for the changed file list —
+     use `gh pr diff <ref>` for the actual diff content if you need it for
+     language grouping or applying rules against the PR's version of a file
+     rather than the local one.
+   - Otherwise, default to uncommitted changes — `git status` for tracked
+     modifications and untracked files, same signal the `commit` skill reads.
 2. **Resolve language per file**: group the scoped files by extension. For
    each distinct extension not yet resolved this run, ask the user what
    language it is (free-text — languages aren't a fixed enumerable set). Ask
    once per distinct extension, not once per file.
 3. **Load or author rules, per language**:
-   - Check whether `.tardis/polish/{language}.md` exists.
-   - If it exists, read it and use its rules for that language's files.
-   - If it does not exist: stop for that language, tell the user no rules
+   - Check project-level `.tardis/polish/{language}.md` first, then
+     `~/.tardis/polish/{language}.md` if the project-level file doesn't
+     exist.
+   - If either exists, read it and use its rules for that language's files.
+   - If neither exists: stop for that language, tell the user no rules
      exist yet, and ask for one bad example and one good example. From that
-     pair, derive a one-line rule statement. Write a new entry to
-     `.tardis/polish/{language}.md` (creating `.tardis/polish/` if needed)
-     containing the derived statement plus both raw snippets, in the format
-     shown above. Continue this same run using the rule just recorded — do
-     not require a second invocation.
+     pair, derive a one-line rule statement. Write a new entry to the
+     project-level `.tardis/polish/{language}.md` (creating `.tardis/polish/`
+     if needed) containing the derived statement plus both raw snippets, in
+     the format shown above. Continue this same run using the rule just
+     recorded — do not require a second invocation.
 4. **Apply rules**: for every file whose language has a loaded (or
    just-authored) rules file, produce the polished version in memory.
    - Any file whose language still has no rules file (the user declined to
