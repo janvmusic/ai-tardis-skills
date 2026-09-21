@@ -127,13 +127,16 @@ tardis-ai remove --yes                  # remove everything installed -> .claude
 ## Updating Skills
 
 `update` re-syncs skills you already installed, leaving the rest of the project
-untouched. Unlike `install`/`remove`, it isn't wizard-based — it still takes
-an optional skill name directly:
+untouched. Like `install`/`remove`, it walks a wizard: scope (Project or
+Global), AI agent, then a checklist of the skills installed there. Pass a skill
+name, `all` or `--yes` to skip the wizard:
 
 ```bash
-tardis-ai update                  # every installed skill (defaults to Claude)
-tardis-ai update rails-expert     # just one skill
-tardis-ai update --ai=opencode    # every skill installed under .opencode/skill
+tardis-ai update                  # wizard
+tardis-ai update rails-expert     # just one skill (Project, defaults to Claude)
+tardis-ai update all              # every installed skill (Project)
+tardis-ai update --yes            # same as "all", for CI
+tardis-ai update --ai=opencode --yes   # every skill installed under .opencode/skill
 ```
 
 Each skill folder is replaced rather than merged, so files removed upstream

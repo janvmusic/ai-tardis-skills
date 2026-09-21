@@ -179,6 +179,88 @@ function cancelWizard(message = 'Cancelled. Nothing changed.') {
   process.exit(1)
 }
 
+function refreshSkills(dest, destLabel, agent, targets, log) {
+  const available = availableSkills()
+  let updated = 0
+  targets.forEach(s => {
+    if (!available.includes(s)) {
+      log(`Skipped "${s}" — no longer part of ai-tardis-skills. Remove it with "tardis-ai remove".`)
+      return
+    }
+    const target = path.join(dest, s)
+    const preserved = PRESERVED_ON_UPDATE
+      .map(rel => path.join(target, rel))
+      .filter(filePath => fs.existsSync(filePath))
+      .map(filePath => [filePath, fs.readFileSync(filePath)])
+    // Replace instead of merge so files dropped upstream don't linger.
+    fs.rmSync(target, { recursive: true, force: true })
+    copyDir(path.join(SKILLS_SRC, s), target)
+    preserved.forEach(([filePath, contents]) => {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true })
+      fs.writeFileSync(filePath, contents)
+    })
+    log(`Updated "${s}" in ${destLabel}/${s} (${agent})`)
+    updated++
+  })
+  return updated
+}
+
+async function updateWizard() {
+  p.intro('tardis-ai update')
+
+  const scope = await p.select({
+    message: 'Update skills where?',
+    options: [
+      { value: 'project', label: 'Project', hint: 'this directory only' },
+      { value: 'global', label: 'Global', hint: 'shared across every project' },
+    ],
+  })
+  if (p.isCancel(scope)) return cancelWizard()
+
+  const agent = await p.select({
+    message: 'Which AI agent?',
+    options: [
+      { value: 'claude', label: AGENT_LABELS.claude },
+      { value: 'opencode', label: AGENT_LABELS.opencode },
+      { value: 'agents', label: AGENT_LABELS.agents },
+    ],
+  })
+  if (p.isCancel(agent)) return cancelWizard()
+
+  const dest = resolveDestFor(agent, scope)
+  const destLabel = destLabelFor(agent, scope)
+  const installed = installedSkills(dest)
+
+  if (installed.length === 0) {
+    p.outro(`No skills installed in ${destLabel} (${agent}). Run "tardis-ai install" first.`)
+    return
+  }
+
+  const selected = await p.multiselect({
+    message: 'Which skills do you want to update?',
+    options: installed.map(s => ({ value: s, label: s })),
+    initialValues: installed,
+    required: true,
+  })
+  if (p.isCancel(selected)) return cancelWizard()
+
+  p.note(
+    [
+      `Scope: ${scope === 'global' ? 'Global' : 'Project'}`,
+      `Agent: ${AGENT_LABELS[agent]}`,
+      `Skills: ${selected.join(', ')}`,
+    ].join('\n'),
+    'Summary'
+  )
+
+  const confirmed = await p.confirm({ message: 'Update these skills?' })
+  if (p.isCancel(confirmed) || !confirmed) return cancelWizard('Nothing updated.')
+
+  const updated = refreshSkills(dest, destLabel, agent, selected, message => p.log.success(message))
+  p.outro(`${updated} skill${updated === 1 ? '' : 's'} updated to ai-tardis-skills v${PKG.version}.`)
+  notifyIfOutdated()
+}
+
 function update(skill) {
   const dest = resolveDest()
   const destLabel = AI_TARGETS[ai]
@@ -199,32 +281,7 @@ function update(skill) {
     targets = [skill]
   }
 
-  let updated = 0
-  const orphans = []
-  targets.forEach(s => {
-    if (!available.includes(s)) {
-      orphans.push(s)
-      return
-    }
-    const target = path.join(dest, s)
-    const preserved = PRESERVED_ON_UPDATE
-      .map(rel => path.join(target, rel))
-      .filter(filePath => fs.existsSync(filePath))
-      .map(filePath => [filePath, fs.readFileSync(filePath)])
-    // Replace instead of merge so files dropped upstream don't linger.
-    fs.rmSync(target, { recursive: true, force: true })
-    copyDir(path.join(SKILLS_SRC, s), target)
-    preserved.forEach(([filePath, contents]) => {
-      fs.mkdirSync(path.dirname(filePath), { recursive: true })
-      fs.writeFileSync(filePath, contents)
-    })
-    console.log(`Updated "${s}" in ${destLabel}/${s} (${ai})`)
-    updated++
-  })
-
-  orphans.forEach(s =>
-    console.log(`Skipped "${s}" — no longer part of ai-tardis-skills. Remove it with "tardis-ai remove".`)
-  )
+  const updated = refreshSkills(dest, destLabel, ai, targets, message => console.log(message))
 
   console.log(`${updated} skill${updated === 1 ? '' : 's'} updated to ai-tardis-skills v${PKG.version}.`)
 
@@ -371,15 +428,16 @@ function help() {
   console.log('Commands:')
   console.log('  list              Show available skills (--installed shows what\'s installed)')
   console.log('  install           Interactive wizard: scope, AI agent, then pick skills')
-  console.log('  update [skill]    Refresh installed skills (omit or use "all" for every one)')
+  console.log('  update [skill]    Interactive wizard: scope, AI agent, then pick skills to refresh')
+  console.log('                    (a skill name or "all" skips the wizard, Project/--ai target)')
   console.log('  remove            Interactive wizard: scope, AI agent, then pick skills to remove')
   console.log('  delete            Alias for remove')
   console.log('  version           Print the installed tardis-ai version')
   console.log('')
   console.log('Options:')
   console.log('  -v, --version     Print the installed tardis-ai version')
-  console.log('  --yes, -y         Skip the install/remove wizard: every non-deprecated skill (install)')
-  console.log('                    or everything installed (remove), Project scope, --ai target')
+  console.log('  --yes, -y         Skip the install/update/remove wizard: every non-deprecated skill (install)')
+  console.log('                    or everything installed (update/remove), Project scope, --ai target')
   console.log('  --ai=<name>       AI target for update/list --installed/--yes: claude (default), opencode, agents')
   console.log('  --installed       With list: show what\'s installed instead of what\'s available')
   console.log('')
@@ -438,7 +496,14 @@ async function main() {
       }
       break
     case 'update':
-      update(rest[0])
+      if (rest.length > 0 || yes) {
+        update(rest[0])
+      } else if (!isInteractive()) {
+        console.error('tardis-ai update requires an interactive terminal. Use "tardis-ai update --yes" in CI or non-interactive contexts.')
+        process.exit(1)
+      } else {
+        await updateWizard()
+      }
       break
     case 'remove':
     case 'delete':
