@@ -301,7 +301,7 @@ describe('update', () => {
   it('updates every installed skill when the name is omitted', () => {
     run('install', '--yes')
 
-    const { stdout } = run('update')
+    const { stdout } = run('update', '--yes')
 
     assert.match(stdout, /Updated "commit"/)
     assert.match(stdout, /Updated "code-review"/)
@@ -311,7 +311,7 @@ describe('update', () => {
   it('reports skills available but not installed', () => {
     run('install', '--yes')
 
-    const { stdout } = run('update')
+    const { stdout } = run('update', '--yes')
 
     assert.match(stdout, /New skills available: frontend-expert, rails-expert\./)
     assert.match(stdout, /Install with "tardis-ai install"/)
@@ -322,14 +322,32 @@ describe('update', () => {
     const orphan = path.join(project, '.claude', 'skills', 'retired-skill')
     fs.mkdirSync(orphan, { recursive: true })
 
-    const { stdout } = run('update')
+    const { stdout } = run('update', '--yes')
 
     assert.match(stdout, /Skipped "retired-skill" — no longer part of ai-tardis-skills/)
     assert.ok(fs.existsSync(orphan), 'an orphan is reported, never deleted')
   })
 
-  it('fails when nothing is installed', () => {
+  it('requires an interactive terminal without --yes or a skill name', () => {
+    run('install', '--yes')
+
     const { status, stderr } = run('update')
+
+    assert.equal(status, 1)
+    assert.match(stderr, /tardis-ai update requires an interactive terminal/)
+  })
+
+  it('updates every installed skill when given "all"', () => {
+    run('install', '--yes')
+
+    const { status, stdout } = run('update', 'all')
+
+    assert.equal(status, 0)
+    assert.match(stdout, new RegExp(`${AVAILABLE.length - DEPRECATED.length} skills updated`))
+  })
+
+  it('fails when nothing is installed', () => {
+    const { status, stderr } = run('update', '--yes')
 
     assert.equal(status, 1)
     assert.match(stderr, /No skills installed in \.claude\/skills \(claude\)/)
@@ -400,6 +418,24 @@ describe('internals: resolveDestFor / destLabelFor', () => {
   })
 })
 
+describe('internals: installedLocations', () => {
+  it('lists only project locations that have skills installed', () => {
+    const original = process.cwd()
+    fs.mkdirSync(path.join(project, '.claude', 'skills', 'commit'), { recursive: true })
+    fs.mkdirSync(path.join(project, '.agents', 'skills', 'polish'), { recursive: true })
+    fs.mkdirSync(path.join(project, '.opencode', 'skill'), { recursive: true })
+    process.chdir(project)
+    try {
+      const found = cli.installedLocations()
+        .filter(l => l.scope === 'project')
+        .map(l => [l.agent, l.installed])
+      assert.deepEqual(found, [['claude', ['commit']], ['agents', ['polish']]])
+    } finally {
+      process.chdir(original)
+    }
+  })
+})
+
 describe('version', () => {
   for (const flag of ['version', '--version', '-v']) {
     it(`prints the package version for "${flag}"`, () => {
@@ -425,6 +461,12 @@ describe('help', () => {
     const { stdout } = run('help')
 
     assert.match(stdout, /^ {2}delete {12}Alias for remove$/m)
+  })
+
+  it('documents update as an interactive wizard', () => {
+    const { stdout } = run('help')
+
+    assert.match(stdout, /^ {2}update \[skill\] {4}Interactive wizard/m)
   })
 
   it('documents the --yes escape hatch', () => {

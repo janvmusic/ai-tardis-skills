@@ -112,8 +112,10 @@ description: { one-line description used for triggering and discovery }
   reproduce the old default behavior non-interactively (Project scope, the
   resolved `--ai` target; install = every non-deprecated skill, remove =
   everything installed) — this is what CI and the specs use.
-- `update` is unchanged by the above — still takes an optional skill name and
-  operates on the Project/`--ai` target only.
+- `update` is also a wizard now (scope → agent → checklist of installed
+  skills → summary → confirm). A skill name, `all` or `--yes` skips it and
+  operates on the Project/`--ai` target only. Bare `update` without a TTY
+  and without `--yes` errors, like install/remove.
 - `--ai=<name>` selects where skills land for `update`, `list --installed`,
   and the `--yes` forms, parsed from any argument position in both `--ai=x`
   and `--ai x` forms. The wizard asks for the agent interactively instead.
