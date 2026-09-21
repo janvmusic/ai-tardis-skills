@@ -142,9 +142,26 @@ npm install -g ai-tardis-skills@latest   # or: brew upgrade tardis-ai
 tardis-ai update
 ```
 
-`update` checks the registry and tells you when your CLI is behind. `npx` and
-`bunx` users are always on the version they invoked, so
-`npx ai-tardis-skills@latest update` is a single-step refresh.
+`update` checks the registry and tells you when your CLI is behind.
+
+### With npx
+
+`npx` and `bunx` always run the version you name, so there is no separate CLI
+upgrade. `@latest` skips any cached older copy:
+
+```bash
+npx -y ai-tardis-skills@latest update
+```
+
+Run it from your project directory for Project skills. For Global skills run it
+from anywhere: the wizard lists `Global · <agent>` next to any Project
+locations, and goes straight to the checklist when it is the only one.
+
+### With a global CLI
+
+If you installed the CLI globally (`npm install -g` or Homebrew), upgrade it
+first, then run `update` as shown above. `npx ...@latest` ignores a global
+install and fetches the newest published version itself, so either route works.
 
 ## Development
 
