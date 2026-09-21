@@ -418,6 +418,24 @@ describe('internals: resolveDestFor / destLabelFor', () => {
   })
 })
 
+describe('internals: installedLocations', () => {
+  it('lists only project locations that have skills installed', () => {
+    const original = process.cwd()
+    fs.mkdirSync(path.join(project, '.claude', 'skills', 'commit'), { recursive: true })
+    fs.mkdirSync(path.join(project, '.agents', 'skills', 'polish'), { recursive: true })
+    fs.mkdirSync(path.join(project, '.opencode', 'skill'), { recursive: true })
+    process.chdir(project)
+    try {
+      const found = cli.installedLocations()
+        .filter(l => l.scope === 'project')
+        .map(l => [l.agent, l.installed])
+      assert.deepEqual(found, [['claude', ['commit']], ['agents', ['polish']]])
+    } finally {
+      process.chdir(original)
+    }
+  })
+})
+
 describe('version', () => {
   for (const flag of ['version', '--version', '-v']) {
     it(`prints the package version for "${flag}"`, () => {

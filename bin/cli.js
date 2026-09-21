@@ -85,6 +85,15 @@ function installedSkills(dest) {
   )
 }
 
+function installedLocations() {
+  return ['project', 'global'].flatMap(scope =>
+    Object.keys(AI_TARGETS).map(agent => {
+      const dest = resolveDestFor(agent, scope)
+      return { scope, agent, dest, destLabel: destLabelFor(agent, scope), installed: installedSkills(dest) }
+    })
+  ).filter(l => l.installed.length > 0)
+}
+
 function isInteractive() {
   return Boolean(process.stdin.isTTY && process.stdout.isTTY) && !process.env.CI
 }
@@ -208,33 +217,27 @@ function refreshSkills(dest, destLabel, agent, targets, log) {
 async function updateWizard() {
   p.intro('tardis-ai update')
 
-  const scope = await p.select({
-    message: 'Update skills where?',
-    options: [
-      { value: 'project', label: 'Project', hint: 'this directory only' },
-      { value: 'global', label: 'Global', hint: 'shared across every project' },
-    ],
-  })
-  if (p.isCancel(scope)) return cancelWizard()
-
-  const agent = await p.select({
-    message: 'Which AI agent?',
-    options: [
-      { value: 'claude', label: AGENT_LABELS.claude },
-      { value: 'opencode', label: AGENT_LABELS.opencode },
-      { value: 'agents', label: AGENT_LABELS.agents },
-    ],
-  })
-  if (p.isCancel(agent)) return cancelWizard()
-
-  const dest = resolveDestFor(agent, scope)
-  const destLabel = destLabelFor(agent, scope)
-  const installed = installedSkills(dest)
-
-  if (installed.length === 0) {
-    p.outro(`No skills installed in ${destLabel} (${agent}). Run "tardis-ai install" first.`)
+  const locations = installedLocations()
+  if (locations.length === 0) {
+    p.outro('No skills installed in any Project or Global location. Run "tardis-ai install" first.')
     return
   }
+
+  let location = locations[0]
+  if (locations.length > 1) {
+    const choice = await p.select({
+      message: 'Update skills where?',
+      options: locations.map((l, i) => ({
+        value: i,
+        label: `${l.scope === 'global' ? 'Global' : 'Project'} · ${AGENT_LABELS[l.agent]}`,
+        hint: `${l.destLabel} · ${l.installed.length} skill${l.installed.length === 1 ? '' : 's'}`,
+      })),
+    })
+    if (p.isCancel(choice)) return cancelWizard()
+    location = locations[choice]
+  }
+
+  const { scope, agent, dest, destLabel, installed } = location
 
   const selected = await p.multiselect({
     message: 'Which skills do you want to update?',
@@ -547,6 +550,7 @@ module.exports = {
   DEPRECATED_SKILLS,
   availableSkills,
   installedSkills,
+  installedLocations,
   copyDir,
   resolveDestFor,
   destLabelFor,
