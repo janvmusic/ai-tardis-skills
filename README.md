@@ -112,30 +112,15 @@ check off any combination of skills — deprecated ones are listed too, marked
 | `opencode`                  | `.opencode/skill` | `~/.config/opencode/skills` |
 | `agents` (Codex, AGENTS.md) | `.agents/skills`  | `~/.agents/skills`           |
 
-### Non-interactive / CI
-
-`install --yes` and `remove --yes` skip the wizard: `install --yes` adds every
-non-deprecated skill to the Project `--ai` target (`claude` by default),
-`remove --yes` removes everything installed there.
-
-```bash
-tardis-ai install --yes                 # every non-deprecated skill -> .claude/skills/
-tardis-ai install --yes --ai=opencode   # same, but -> .opencode/skill/
-tardis-ai remove --yes                  # remove everything installed -> .claude/skills/
-```
-
 ## Updating Skills
 
 `update` re-syncs skills you already installed, leaving the rest of the project
-untouched. Like `install`/`remove`, it is wizard-only: it lists the scope and
+untouched. Like `install` and `remove`, it is a wizard: it lists the scope and
 AI agent combinations that have skills installed, then a checklist of those
-skills. `update --yes` skips the wizard and refreshes everything installed in
-the Project/`--ai` target:
+skills.
 
 ```bash
-tardis-ai update                       # wizard
-tardis-ai update --yes                 # every installed skill, for CI
-tardis-ai update --yes --ai=opencode   # every skill installed under .opencode/skill
+tardis-ai update
 ```
 
 Each skill folder is replaced rather than merged, so files removed upstream
