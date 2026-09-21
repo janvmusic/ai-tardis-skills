@@ -1,8 +1,8 @@
 class TardisAi < Formula
   desc "CLI to manage AI skills for Claude Code, OpenCode, and other agents"
   homepage "https://github.com/janvmusic/ai-tardis-skills"
-  url "https://registry.npmjs.org/ai-tardis-skills/-/ai-tardis-skills-2.0.0.tgz"
-  sha256 "5b257a1d328c7981997f094cebfc7d535b17294ae35940d81afdd87092de34c2"
+  url "https://registry.npmjs.org/ai-tardis-skills/-/ai-tardis-skills-2.0.1.tgz"
+  sha256 "43eba034bfee3f35187d0a3764c35d034e64143182ea2f0423d3c038d9ae14d9"
   license "MIT"
 
   depends_on "node"
