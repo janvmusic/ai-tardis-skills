@@ -265,7 +265,7 @@ async function updateWizard() {
   notifyIfOutdated()
 }
 
-function update(skill) {
+function updateYes() {
   const dest = resolveDest()
   const destLabel = AI_TARGETS[ai]
   const available = availableSkills()
@@ -276,16 +276,7 @@ function update(skill) {
     process.exit(1)
   }
 
-  let targets = installed
-  if (skill && skill !== 'all') {
-    if (!installed.includes(skill)) {
-      console.error(`Skill "${skill}" is not installed for ${ai}. Run "tardis-ai install" first.`)
-      process.exit(1)
-    }
-    targets = [skill]
-  }
-
-  const updated = refreshSkills(dest, destLabel, ai, targets, message => console.log(message))
+  const updated = refreshSkills(dest, destLabel, ai, installed, message => console.log(message))
 
   console.log(`${updated} skill${updated === 1 ? '' : 's'} updated to ai-tardis-skills v${PKG.version}.`)
 
@@ -408,8 +399,7 @@ function help() {
   console.log('Commands:')
   console.log('  list              Show available skills (--installed shows what\'s installed)')
   console.log('  install           Interactive wizard: scope, AI agent, then pick skills')
-  console.log('  update [skill]    Interactive wizard: scope, AI agent, then pick skills to refresh')
-  console.log('                    (a skill name or "all" skips the wizard, Project/--ai target)')
+  console.log('  update            Interactive wizard: scope, AI agent, then pick skills to refresh')
   console.log('  remove            Interactive wizard: scope, AI agent, then pick skills to remove')
   console.log('  delete            Alias for remove')
   console.log('  version           Print the installed tardis-ai version')
@@ -476,8 +466,12 @@ async function main() {
       }
       break
     case 'update':
-      if (rest.length > 0 || yes) {
-        update(rest[0])
+      if (rest.length > 0) {
+        console.error('tardis-ai update no longer takes a skill name. Run "tardis-ai update" for the interactive wizard, or "tardis-ai update --yes" to update everything installed non-interactively.')
+        process.exit(1)
+      }
+      if (yes) {
+        updateYes()
       } else if (!isInteractive()) {
         console.error('tardis-ai update requires an interactive terminal. Use "tardis-ai update --yes" in CI or non-interactive contexts.')
         process.exit(1)

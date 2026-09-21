@@ -105,17 +105,17 @@ description: { one-line description used for triggering and discovery }
   one exists because hand-rolling raw-mode terminal UI from scratch is a much
   larger maintenance burden than one well-maintained library.
 - Commands: `list`, `install`, `update`, `remove`/`delete`, `version`, `help`.
-- `install` and `remove`/`delete` are wizard-only — no more `install <skill>`,
+- `install`, `update` and `remove`/`delete` are wizard-only — no more `install <skill>`,
   `install all`, or bulk positional names. Each always walks: scope (Project
   or Global) → AI agent (Claude/OpenCode/Codex) → skill checklist → summary →
   confirm. `install --yes` / `remove --yes` skip the wizard entirely and
   reproduce the old default behavior non-interactively (Project scope, the
   resolved `--ai` target; install = every non-deprecated skill, remove =
   everything installed) — this is what CI and the specs use.
-- `update` is also a wizard now (scope → agent → checklist of installed
-  skills → summary → confirm). A skill name, `all` or `--yes` skips it and
-  operates on the Project/`--ai` target only. Bare `update` without a TTY
-  and without `--yes` errors, like install/remove.
+- `update` is wizard-only like the others: it offers only the scope/agent
+  combinations that have skills installed, then a checklist. `update --yes`
+  refreshes everything installed at the Project/`--ai` target. A skill name
+  or `all` errors.
 - `--ai=<name>` selects where skills land for `update`, `list --installed`,
   and the `--yes` forms, parsed from any argument position in both `--ai=x`
   and `--ai x` forms. The wizard asks for the agent interactively instead.

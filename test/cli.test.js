@@ -238,11 +238,11 @@ describe('delete (alias for remove)', () => {
 describe('update', () => {
   it('refreshes an installed skill', () => {
     run('install', '--yes')
-    const { status, stdout } = run('update', 'commit')
+    const { status, stdout } = run('update', '--yes')
 
     assert.equal(status, 0)
     assert.match(stdout, /Updated "commit" in \.claude\/skills\/commit \(claude\)/)
-    assert.match(stdout, new RegExp(`1 skill updated to ai-tardis-skills v${PKG.version}\\.`))
+    assert.match(stdout, new RegExp(`${AVAILABLE.length - DEPRECATED.length} skills updated to ai-tardis-skills v${PKG.version}\\.`))
   })
 
   it('replaces the skill folder instead of merging into it', () => {
@@ -250,7 +250,7 @@ describe('update', () => {
     const stray = path.join(project, '.claude', 'skills', 'commit', 'stray.md')
     fs.writeFileSync(stray, 'left over from an older release')
 
-    run('update', 'commit')
+    run('update', '--yes')
 
     assert.ok(!fs.existsSync(stray), 'files dropped upstream should not linger')
     assert.ok(installed('commit'))
@@ -262,7 +262,7 @@ describe('update', () => {
     fs.mkdirSync(path.dirname(conventions), { recursive: true })
     fs.writeFileSync(conventions, 'custom convention: no ticket scope required')
 
-    run('update', 'commit')
+    run('update', '--yes')
 
     assert.equal(fs.readFileSync(conventions, 'utf8'), 'custom convention: no ticket scope required')
     assert.ok(installed('commit'), 'the rest of the skill folder is still refreshed')
@@ -271,7 +271,7 @@ describe('update', () => {
   it('does not fabricate references/conventions.md when none exists', () => {
     run('install', '--yes')
 
-    run('update', 'commit')
+    run('update', '--yes')
 
     const conventions = path.join(project, '.claude', 'skills', 'commit', 'references', 'conventions.md')
     assert.ok(!fs.existsSync(conventions), 'creating the convention file is the skill\'s job, not the CLI\'s')
@@ -283,7 +283,7 @@ describe('update', () => {
     fs.mkdirSync(path.dirname(template), { recursive: true })
     fs.writeFileSync(template, 'custom PR template: Summary / Steps to Test / Demo')
 
-    run('update', 'create-pr')
+    run('update', '--yes')
 
     assert.equal(fs.readFileSync(template, 'utf8'), 'custom PR template: Summary / Steps to Test / Demo')
     assert.ok(installed('create-pr'), 'the rest of the skill folder is still refreshed')
@@ -292,13 +292,13 @@ describe('update', () => {
   it('does not fabricate references/pr_template.md when none exists', () => {
     run('install', '--yes')
 
-    run('update', 'create-pr')
+    run('update', '--yes')
 
     const template = path.join(project, '.claude', 'skills', 'create-pr', 'references', 'pr_template.md')
     assert.ok(!fs.existsSync(template), 'creating the template file is the skill\'s job, not the CLI\'s')
   })
 
-  it('updates every installed skill when the name is omitted', () => {
+  it('updates every installed skill', () => {
     run('install', '--yes')
 
     const { stdout } = run('update', '--yes')
@@ -337,13 +337,15 @@ describe('update', () => {
     assert.match(stderr, /tardis-ai update requires an interactive terminal/)
   })
 
-  it('updates every installed skill when given "all"', () => {
+  it('rejects a skill name and points to the wizard', () => {
     run('install', '--yes')
 
-    const { status, stdout } = run('update', 'all')
+    for (const arg of ['commit', 'all']) {
+      const { status, stderr } = run('update', arg)
 
-    assert.equal(status, 0)
-    assert.match(stdout, new RegExp(`${AVAILABLE.length - DEPRECATED.length} skills updated`))
+      assert.equal(status, 1)
+      assert.match(stderr, /tardis-ai update no longer takes a skill name/)
+    }
   })
 
   it('fails when nothing is installed', () => {
@@ -351,20 +353,6 @@ describe('update', () => {
 
     assert.equal(status, 1)
     assert.match(stderr, /No skills installed in \.claude\/skills \(claude\)/)
-  })
-
-  it('fails when the named skill is not installed', () => {
-    // Seed directly on disk rather than via --yes, since --yes installs
-    // every non-deprecated skill and there's no non-interactive way to
-    // install a subset that excludes "commit" specifically.
-    const codeReviewDest = path.join(project, '.claude', 'skills', 'code-review')
-    fs.mkdirSync(codeReviewDest, { recursive: true })
-    fs.writeFileSync(path.join(codeReviewDest, 'SKILL.md'), '# code-review')
-
-    const { status, stderr } = run('update', 'commit')
-
-    assert.equal(status, 1)
-    assert.match(stderr, /Skill "commit" is not installed for claude/)
   })
 })
 
@@ -466,7 +454,7 @@ describe('help', () => {
   it('documents update as an interactive wizard', () => {
     const { stdout } = run('help')
 
-    assert.match(stdout, /^ {2}update \[skill\] {4}Interactive wizard/m)
+    assert.match(stdout, /^ {2}update {12}Interactive wizard/m)
   })
 
   it('documents the --yes escape hatch', () => {
