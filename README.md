@@ -106,6 +106,11 @@ The wizard asks where to install: **Project** (this directory only) or
 check off any combination of skills — deprecated ones are listed too, marked
 `(deprecated)`, since the wizard is the only way to install one now.
 
+`update` and `remove` skip the scope and agent questions: they offer only the
+combinations that already have skills installed, and go straight to the
+checklist when there is just one. All three commands are interactive-only and
+exit with an error when there is no terminal (CI, piped input).
+
 | AI                          | Project directory | Global directory            |
 | ---------------------------- | ------------------ | ---------------------------- |
 | `claude` (default)          | `.claude/skills`  | `~/.claude/skills`           |
@@ -125,9 +130,9 @@ tardis-ai update
 
 Each skill folder is replaced rather than merged, so files removed upstream
 disappear instead of lingering — any local edits inside an installed skill are
-overwritten. Skills you never installed are left alone; `update` just lists them
-so you can pick them up with `install`. A skill that no longer exists upstream is
-reported and skipped, never deleted.
+overwritten. Skills you never installed are left alone; pick them up with
+`install`. A skill that no longer exists upstream is reported and skipped, never
+deleted.
 
 Skills ship inside the npm package, so `update` copies whatever version of the
 CLI you have. Upgrade it first to get newly published skill content:
