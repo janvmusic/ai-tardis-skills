@@ -49,6 +49,13 @@ function installed(skill, dir = path.join('.claude', 'skills')) {
   return fs.existsSync(path.join(project, dir, skill, 'SKILL.md'))
 }
 
+function seed(dir = path.join('.claude', 'skills')) {
+  for (const skill of AVAILABLE) {
+    if (DEPRECATED.includes(skill)) continue
+    cli.copyDir(path.join(SKILLS_SRC, skill), path.join(project, dir, skill))
+  }
+}
+
 describe('list', () => {
   it('prints every skill in skills/', () => {
     const { status, stdout } = run('list')
@@ -75,7 +82,7 @@ describe('list', () => {
   })
 
   it('--installed shows only what was actually installed', () => {
-    run('install', '--yes')
+    seed()
 
     const { stdout } = run('list', '--installed')
 
@@ -89,51 +96,6 @@ describe('list', () => {
   })
 })
 
-describe('install', () => {
-  it('rejects a skill name — direct install no longer exists', () => {
-    const { status, stderr } = run('install', 'commit')
-
-    assert.equal(status, 1)
-    assert.match(stderr, /no longer takes a skill name/)
-    assert.deepEqual(fs.readdirSync(project), [])
-  })
-
-  it('requires an interactive terminal without --yes', () => {
-    const { status, stderr } = run('install')
-
-    assert.equal(status, 1)
-    assert.match(stderr, /requires an interactive terminal/)
-    assert.match(stderr, /--yes/)
-  })
-
-  it('--yes installs everything except deprecated skills', () => {
-    const { status } = run('install', '--yes')
-
-    assert.equal(status, 0)
-    for (const skill of AVAILABLE) {
-      if (DEPRECATED.includes(skill)) {
-        assert.ok(!installed(skill), `${skill} is deprecated and should not be installed`)
-      } else {
-        assert.ok(installed(skill), `${skill} should be installed`)
-      }
-    }
-  })
-
-  it('--yes reports the skipped deprecated skills', () => {
-    const { stdout } = run('install', '--yes')
-
-    assert.match(stdout, /Skipped deprecated: .*frontend-expert.*rails-expert\./)
-  })
-
-  it('--yes is idempotent', () => {
-    run('install', '--yes')
-    const { status } = run('install', '--yes')
-
-    assert.equal(status, 0)
-    assert.ok(installed('commit'))
-  })
-})
-
 describe('--ai targeting', () => {
   const cases = [
     ['claude', path.join('.claude', 'skills')],
@@ -142,28 +104,33 @@ describe('--ai targeting', () => {
   ]
 
   for (const [name, dir] of cases) {
-    it(`installs to ${dir} for --ai=${name}`, () => {
-      const { status } = run('install', '--yes', `--ai=${name}`)
+    it(`list --installed reads ${dir} for --ai=${name}`, () => {
+      seed(dir)
 
-      assert.equal(status, 0)
-      assert.ok(installed('commit', dir))
+      const { stdout } = run('list', '--installed', `--ai=${name}`)
+
+      assert.match(stdout, /- commit$/m)
     })
 
     it(`accepts the spaced form --ai ${name}`, () => {
-      run('install', '--yes', '--ai', name)
+      seed(dir)
 
-      assert.ok(installed('commit', dir))
+      const { stdout } = run('list', '--installed', '--ai', name)
+
+      assert.match(stdout, /- commit$/m)
     })
   }
 
   it('reads --ai from anywhere in the arguments', () => {
-    run('--ai=opencode', 'install', '--yes')
+    seed(path.join('.opencode', 'skill'))
 
-    assert.ok(installed('commit', path.join('.opencode', 'skill')))
+    const { stdout } = run('--ai=opencode', 'list', '--installed')
+
+    assert.match(stdout, /- commit$/m)
   })
 
   it('rejects an unknown AI', () => {
-    const { status, stderr } = run('install', '--yes', '--ai=emacs')
+    const { status, stderr } = run('list', '--installed', '--ai=emacs')
 
     assert.equal(status, 1)
     assert.match(stderr, /Unknown AI "emacs"/)
@@ -171,200 +138,108 @@ describe('--ai targeting', () => {
   })
 })
 
-describe('remove', () => {
-  it('rejects a skill name — direct remove no longer exists', () => {
-    const { status, stderr } = run('remove', 'commit')
+describe('wizard-only commands', () => {
+  for (const command of ['install', 'update', 'remove', 'delete']) {
+    it(`${command} rejects arguments and points to the wizard`, () => {
+      const { status, stderr } = run(command, 'commit')
 
-    assert.equal(status, 1)
-    assert.match(stderr, /no longer takes a skill name/)
-  })
+      assert.equal(status, 1)
+      assert.match(stderr, new RegExp(`tardis-ai ${command} takes no arguments`))
+      assert.deepEqual(fs.readdirSync(project), [])
+    })
 
-  it('requires an interactive terminal without --yes', () => {
-    const { status, stderr } = run('remove')
+    it(`${command} requires an interactive terminal`, () => {
+      const { status, stderr } = run(command)
 
-    assert.equal(status, 1)
-    assert.match(stderr, /requires an interactive terminal/)
-    assert.match(stderr, /--yes/)
-  })
+      assert.equal(status, 1)
+      assert.match(stderr, new RegExp(`tardis-ai ${command} requires an interactive terminal`))
+    })
 
-  it('--yes removes everything installed', () => {
-    run('install', '--yes')
-    const { status, stdout } = run('remove', '--yes')
+    it(`${command} no longer has a --yes escape hatch`, () => {
+      const { status, stderr } = run(command, '--yes')
 
-    assert.equal(status, 0)
-    assert.match(stdout, /Removed "commit" from \.claude\/skills\/commit \(claude\)/)
-    assert.ok(!installed('commit'))
-  })
-
-  it('--yes honours --ai', () => {
-    run('install', '--yes', '--ai=opencode')
-    const { status } = run('remove', '--yes', '--ai=opencode')
-
-    assert.equal(status, 0)
-    assert.ok(!installed('commit', path.join('.opencode', 'skill')))
-  })
-
-  it('--yes fails when nothing is installed', () => {
-    const { status, stderr } = run('remove', '--yes')
-
-    assert.equal(status, 1)
-    assert.match(stderr, /No skills installed in \.claude\/skills \(claude\)/)
-  })
+      assert.equal(status, 1)
+      assert.match(stderr, /takes no arguments/)
+    })
+  }
 })
 
-describe('delete (alias for remove)', () => {
-  it('rejects a skill name, naming "delete" not "remove" in the error', () => {
-    const { status, stderr } = run('delete', 'commit')
+describe('refreshSkills', () => {
+  const skillDir = skill => path.join(project, '.claude', 'skills', skill)
+  const refresh = (targets, log = () => {}) =>
+    cli.refreshSkills(path.join(project, '.claude', 'skills'), '.claude/skills', 'claude', targets, log)
 
-    assert.equal(status, 1)
-    assert.match(stderr, /tardis-ai delete no longer takes a skill name/)
-  })
+  it('refreshes an installed skill and logs it', () => {
+    seed()
+    const logged = []
 
-  it('requires an interactive terminal without --yes, naming "delete"', () => {
-    const { status, stderr } = run('delete')
+    const updated = refresh(['commit'], message => logged.push(message))
 
-    assert.equal(status, 1)
-    assert.match(stderr, /tardis-ai delete requires an interactive terminal/)
-  })
-
-  it('--yes removes everything installed', () => {
-    run('install', '--yes', '--ai=agents')
-    run('delete', '--yes', '--ai=agents')
-
-    assert.ok(!installed('commit', path.join('.agents', 'skills')))
-  })
-})
-
-describe('update', () => {
-  it('refreshes an installed skill', () => {
-    run('install', '--yes')
-    const { status, stdout } = run('update', 'commit')
-
-    assert.equal(status, 0)
-    assert.match(stdout, /Updated "commit" in \.claude\/skills\/commit \(claude\)/)
-    assert.match(stdout, new RegExp(`1 skill updated to ai-tardis-skills v${PKG.version}\\.`))
+    assert.equal(updated, 1)
+    assert.deepEqual(logged, ['Updated "commit" in .claude/skills/commit (claude)'])
   })
 
   it('replaces the skill folder instead of merging into it', () => {
-    run('install', '--yes')
-    const stray = path.join(project, '.claude', 'skills', 'commit', 'stray.md')
+    seed()
+    const stray = path.join(skillDir('commit'), 'stray.md')
     fs.writeFileSync(stray, 'left over from an older release')
 
-    run('update', 'commit')
+    refresh(['commit'])
 
     assert.ok(!fs.existsSync(stray), 'files dropped upstream should not linger')
     assert.ok(installed('commit'))
   })
 
-  it('preserves a customized references/conventions.md across updates', () => {
-    run('install', '--yes')
-    const conventions = path.join(project, '.claude', 'skills', 'commit', 'references', 'conventions.md')
+  it('preserves a customized references/conventions.md', () => {
+    seed()
+    const conventions = path.join(skillDir('commit'), 'references', 'conventions.md')
     fs.mkdirSync(path.dirname(conventions), { recursive: true })
     fs.writeFileSync(conventions, 'custom convention: no ticket scope required')
 
-    run('update', 'commit')
+    refresh(['commit'])
 
     assert.equal(fs.readFileSync(conventions, 'utf8'), 'custom convention: no ticket scope required')
     assert.ok(installed('commit'), 'the rest of the skill folder is still refreshed')
   })
 
   it('does not fabricate references/conventions.md when none exists', () => {
-    run('install', '--yes')
+    seed()
 
-    run('update', 'commit')
+    refresh(['commit'])
 
-    const conventions = path.join(project, '.claude', 'skills', 'commit', 'references', 'conventions.md')
-    assert.ok(!fs.existsSync(conventions), 'creating the convention file is the skill\'s job, not the CLI\'s')
+    assert.ok(!fs.existsSync(path.join(skillDir('commit'), 'references', 'conventions.md')))
   })
 
-  it('preserves a customized references/pr_template.md across updates', () => {
-    run('install', '--yes')
-    const template = path.join(project, '.claude', 'skills', 'create-pr', 'references', 'pr_template.md')
+  it('preserves a customized references/pr_template.md', () => {
+    seed()
+    const template = path.join(skillDir('create-pr'), 'references', 'pr_template.md')
     fs.mkdirSync(path.dirname(template), { recursive: true })
     fs.writeFileSync(template, 'custom PR template: Summary / Steps to Test / Demo')
 
-    run('update', 'create-pr')
+    refresh(['create-pr'])
 
     assert.equal(fs.readFileSync(template, 'utf8'), 'custom PR template: Summary / Steps to Test / Demo')
     assert.ok(installed('create-pr'), 'the rest of the skill folder is still refreshed')
   })
 
   it('does not fabricate references/pr_template.md when none exists', () => {
-    run('install', '--yes')
+    seed()
 
-    run('update', 'create-pr')
+    refresh(['create-pr'])
 
-    const template = path.join(project, '.claude', 'skills', 'create-pr', 'references', 'pr_template.md')
-    assert.ok(!fs.existsSync(template), 'creating the template file is the skill\'s job, not the CLI\'s')
+    assert.ok(!fs.existsSync(path.join(skillDir('create-pr'), 'references', 'pr_template.md')))
   })
 
-  it('updates every installed skill when the name is omitted', () => {
-    run('install', '--yes')
-
-    const { stdout } = run('update', '--yes')
-
-    assert.match(stdout, /Updated "commit"/)
-    assert.match(stdout, /Updated "code-review"/)
-    assert.match(stdout, new RegExp(`${AVAILABLE.length - DEPRECATED.length} skills updated`))
-  })
-
-  it('reports skills available but not installed', () => {
-    run('install', '--yes')
-
-    const { stdout } = run('update', '--yes')
-
-    assert.match(stdout, /New skills available: frontend-expert, rails-expert\./)
-    assert.match(stdout, /Install with "tardis-ai install"/)
-  })
-
-  it('skips an installed skill that no longer exists upstream', () => {
-    run('install', '--yes')
-    const orphan = path.join(project, '.claude', 'skills', 'retired-skill')
+  it('skips a skill that no longer exists upstream without deleting it', () => {
+    const orphan = skillDir('retired-skill')
     fs.mkdirSync(orphan, { recursive: true })
+    const logged = []
 
-    const { stdout } = run('update', '--yes')
+    const updated = refresh(['retired-skill'], message => logged.push(message))
 
-    assert.match(stdout, /Skipped "retired-skill" — no longer part of ai-tardis-skills/)
+    assert.equal(updated, 0)
+    assert.match(logged[0], /Skipped "retired-skill" — no longer part of ai-tardis-skills/)
     assert.ok(fs.existsSync(orphan), 'an orphan is reported, never deleted')
-  })
-
-  it('requires an interactive terminal without --yes or a skill name', () => {
-    run('install', '--yes')
-
-    const { status, stderr } = run('update')
-
-    assert.equal(status, 1)
-    assert.match(stderr, /tardis-ai update requires an interactive terminal/)
-  })
-
-  it('updates every installed skill when given "all"', () => {
-    run('install', '--yes')
-
-    const { status, stdout } = run('update', 'all')
-
-    assert.equal(status, 0)
-    assert.match(stdout, new RegExp(`${AVAILABLE.length - DEPRECATED.length} skills updated`))
-  })
-
-  it('fails when nothing is installed', () => {
-    const { status, stderr } = run('update', '--yes')
-
-    assert.equal(status, 1)
-    assert.match(stderr, /No skills installed in \.claude\/skills \(claude\)/)
-  })
-
-  it('fails when the named skill is not installed', () => {
-    // Seed directly on disk rather than via --yes, since --yes installs
-    // every non-deprecated skill and there's no non-interactive way to
-    // install a subset that excludes "commit" specifically.
-    const codeReviewDest = path.join(project, '.claude', 'skills', 'code-review')
-    fs.mkdirSync(codeReviewDest, { recursive: true })
-    fs.writeFileSync(path.join(codeReviewDest, 'SKILL.md'), '# code-review')
-
-    const { status, stderr } = run('update', 'commit')
-
-    assert.equal(status, 1)
-    assert.match(stderr, /Skill "commit" is not installed for claude/)
   })
 })
 
@@ -466,13 +341,7 @@ describe('help', () => {
   it('documents update as an interactive wizard', () => {
     const { stdout } = run('help')
 
-    assert.match(stdout, /^ {2}update \[skill\] {4}Interactive wizard/m)
-  })
-
-  it('documents the --yes escape hatch', () => {
-    const { stdout } = run('help')
-
-    assert.match(stdout, /--yes, -y/)
+    assert.match(stdout, /^ {2}update {12}Interactive wizard/m)
   })
 
   it('falls back to help for an unknown command', () => {

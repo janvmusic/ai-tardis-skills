@@ -33,9 +33,8 @@ const PRESERVED_ON_UPDATE = [
 
 const rawArgs = process.argv.slice(2)
 
-// Extract --ai=<name> (or --ai <name>) and --yes/-y from anywhere in the args
+// Extract --ai=<name> (or --ai <name>) from anywhere in the args
 let ai = DEFAULT_AI
-let yes = false
 const positional = []
 for (let i = 0; i < rawArgs.length; i++) {
   const arg = rawArgs[i]
@@ -43,8 +42,6 @@ for (let i = 0; i < rawArgs.length; i++) {
     ai = rawArgs[++i]
   } else if (arg.startsWith('--ai=')) {
     ai = arg.slice('--ai='.length)
-  } else if (arg === '--yes' || arg === '-y') {
-    yes = true
   } else {
     positional.push(arg)
   }
@@ -130,21 +127,6 @@ function list(showInstalled) {
   const skills = availableSkills()
   console.log('Available skills:')
   skills.forEach(skill => console.log(`  - ${skill}`))
-}
-
-// Non-interactive default: every non-deprecated skill, to the Project/--ai target.
-function installYes() {
-  const dest = resolveDest()
-  const destLabel = AI_TARGETS[ai]
-  availableSkills().forEach(s => {
-    if (DEPRECATED_SKILLS.includes(s)) return
-    copyDir(path.join(SKILLS_SRC, s), path.join(dest, s))
-    console.log(`Installed "${s}" to ${destLabel}/${s} (${ai})`)
-  })
-  const skipped = availableSkills().filter(s => DEPRECATED_SKILLS.includes(s))
-  if (skipped.length > 0) {
-    console.log(`Skipped deprecated: ${skipped.join(', ')}.`)
-  }
 }
 
 async function installWizard() {
@@ -265,38 +247,6 @@ async function updateWizard() {
   notifyIfOutdated()
 }
 
-function update(skill) {
-  const dest = resolveDest()
-  const destLabel = AI_TARGETS[ai]
-  const available = availableSkills()
-  const installed = installedSkills(dest)
-
-  if (installed.length === 0) {
-    console.error(`No skills installed in ${destLabel} (${ai}). Run "tardis-ai install" first.`)
-    process.exit(1)
-  }
-
-  let targets = installed
-  if (skill && skill !== 'all') {
-    if (!installed.includes(skill)) {
-      console.error(`Skill "${skill}" is not installed for ${ai}. Run "tardis-ai install" first.`)
-      process.exit(1)
-    }
-    targets = [skill]
-  }
-
-  const updated = refreshSkills(dest, destLabel, ai, targets, message => console.log(message))
-
-  console.log(`${updated} skill${updated === 1 ? '' : 's'} updated to ai-tardis-skills v${PKG.version}.`)
-
-  const newSkills = available.filter(s => !installed.includes(s))
-  if (newSkills.length > 0) {
-    console.log(`New skills available: ${newSkills.join(', ')}. Install with "tardis-ai install".`)
-  }
-
-  notifyIfOutdated()
-}
-
 // Skills ship inside the package, so a stale CLI updates skills to stale
 // content. Best-effort notice — never blocks or fails the update.
 function notifyIfOutdated() {
@@ -338,20 +288,6 @@ function isNewer(a, b) {
 }
 
 // Non-interactive default: remove everything installed at the Project/--ai target.
-function removeYes(invokedAs) {
-  const dest = resolveDest()
-  const destLabel = AI_TARGETS[ai]
-  const installed = installedSkills(dest)
-  if (installed.length === 0) {
-    console.error(`No skills installed in ${destLabel} (${ai}).`)
-    process.exit(1)
-  }
-  installed.forEach(s => {
-    fs.rmSync(path.join(dest, s), { recursive: true, force: true })
-    console.log(`Removed "${s}" from ${destLabel}/${s} (${ai})`)
-  })
-}
-
 async function removeWizard(invokedAs) {
   p.intro(`tardis-ai ${invokedAs}`)
 
@@ -408,17 +344,14 @@ function help() {
   console.log('Commands:')
   console.log('  list              Show available skills (--installed shows what\'s installed)')
   console.log('  install           Interactive wizard: scope, AI agent, then pick skills')
-  console.log('  update [skill]    Interactive wizard: scope, AI agent, then pick skills to refresh')
-  console.log('                    (a skill name or "all" skips the wizard, Project/--ai target)')
+  console.log('  update            Interactive wizard: scope, AI agent, then pick skills to refresh')
   console.log('  remove            Interactive wizard: scope, AI agent, then pick skills to remove')
   console.log('  delete            Alias for remove')
   console.log('  version           Print the installed tardis-ai version')
   console.log('')
   console.log('Options:')
   console.log('  -v, --version     Print the installed tardis-ai version')
-  console.log('  --yes, -y         Skip the install/update/remove wizard: every non-deprecated skill (install)')
-  console.log('                    or everything installed (update/remove), Project scope, --ai target')
-  console.log('  --ai=<name>       AI target for update/list --installed/--yes: claude (default), opencode, agents')
+  console.log('  --ai=<name>       AI target for list --installed: claude (default), opencode, agents')
   console.log('  --installed       With list: show what\'s installed instead of what\'s available')
   console.log('')
   console.log('Skills:')
@@ -456,49 +389,32 @@ function tardis() {
   console.log('  ===================')
 }
 
+async function interactiveOnly(name, wizard) {
+  if (rest.length > 0) {
+    console.error(`tardis-ai ${name} takes no arguments. Run "tardis-ai ${name}" for the interactive wizard.`)
+    process.exit(1)
+  }
+  if (!isInteractive()) {
+    console.error(`tardis-ai ${name} requires an interactive terminal.`)
+    process.exit(1)
+  }
+  await wizard()
+}
+
 async function main() {
   switch (command) {
     case 'list':
       list(rest.includes('--installed'))
       break
     case 'install':
-      if (rest.length > 0) {
-        console.error('tardis-ai install no longer takes a skill name. Run "tardis-ai install" for the interactive wizard, or "tardis-ai install --yes" to install every non-deprecated skill non-interactively.')
-        process.exit(1)
-      }
-      if (yes) {
-        installYes()
-      } else if (!isInteractive()) {
-        console.error('tardis-ai install requires an interactive terminal. Use "tardis-ai install --yes" in CI or non-interactive contexts.')
-        process.exit(1)
-      } else {
-        await installWizard()
-      }
+      await interactiveOnly(command, installWizard)
       break
     case 'update':
-      if (rest.length > 0 || yes) {
-        update(rest[0])
-      } else if (!isInteractive()) {
-        console.error('tardis-ai update requires an interactive terminal. Use "tardis-ai update --yes" in CI or non-interactive contexts.')
-        process.exit(1)
-      } else {
-        await updateWizard()
-      }
+      await interactiveOnly(command, updateWizard)
       break
     case 'remove':
     case 'delete':
-      if (rest.length > 0) {
-        console.error(`tardis-ai ${command} no longer takes a skill name. Run "tardis-ai ${command}" for the interactive wizard, or "tardis-ai ${command} --yes" to remove everything installed non-interactively.`)
-        process.exit(1)
-      }
-      if (yes) {
-        removeYes(command)
-      } else if (!isInteractive()) {
-        console.error(`tardis-ai ${command} requires an interactive terminal. Use "tardis-ai ${command} --yes" in CI or non-interactive contexts.`)
-        process.exit(1)
-      } else {
-        await removeWizard(command)
-      }
+      await interactiveOnly(command, () => removeWizard(command))
       break
     case 'sexy':
       tardis()
@@ -528,6 +444,7 @@ module.exports = {
   availableSkills,
   installedSkills,
   installedLocations,
+  refreshSkills,
   copyDir,
   resolveDestFor,
   destLabelFor,

@@ -105,20 +105,17 @@ description: { one-line description used for triggering and discovery }
   one exists because hand-rolling raw-mode terminal UI from scratch is a much
   larger maintenance burden than one well-maintained library.
 - Commands: `list`, `install`, `update`, `remove`/`delete`, `version`, `help`.
-- `install` and `remove`/`delete` are wizard-only — no more `install <skill>`,
-  `install all`, or bulk positional names. Each always walks: scope (Project
-  or Global) → AI agent (Claude/OpenCode/Codex) → skill checklist → summary →
-  confirm. `install --yes` / `remove --yes` skip the wizard entirely and
-  reproduce the old default behavior non-interactively (Project scope, the
-  resolved `--ai` target; install = every non-deprecated skill, remove =
-  everything installed) — this is what CI and the specs use.
-- `update` is also a wizard now (scope → agent → checklist of installed
-  skills → summary → confirm). A skill name, `all` or `--yes` skips it and
-  operates on the Project/`--ai` target only. Bare `update` without a TTY
-  and without `--yes` errors, like install/remove.
-- `--ai=<name>` selects where skills land for `update`, `list --installed`,
-  and the `--yes` forms, parsed from any argument position in both `--ai=x`
-  and `--ai x` forms. The wizard asks for the agent interactively instead.
+- `install`, `update` and `remove`/`delete` are wizard-only, with no
+  arguments and no `--yes` flag. `install` walks scope (Project or Global) →
+  AI agent (Claude/OpenCode/Codex) → skill checklist → summary → confirm.
+  `update` and `remove` skip straight to a picker of the scope/agent
+  combinations that actually have skills installed (or to the checklist when
+  only one does). Without a TTY they exit 1 with "requires an interactive
+  terminal", so the specs cover only argument rejection and the pure helpers
+  (`refreshSkills`, `installedLocations`); the wizards are manual-test-only.
+- `--ai=<name>` selects the target for `list --installed`, parsed from any
+  argument position in both `--ai=x` and `--ai x` forms. The wizards ask for
+  the agent interactively instead.
 
   | AI                          | Project directory | Global directory            |
   | --------------------------- | ----------------- | --------------------------- |
