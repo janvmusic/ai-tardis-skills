@@ -271,6 +271,64 @@ describe('internals: copyDir', () => {
   })
 })
 
+const EXPLICIT_ONLY = [
+  'code-review',
+  'plan-review',
+  'unravel',
+  'root-cause-investigator',
+  'read-jira-ticket',
+  'polish',
+]
+
+describe('explicit-only skills', () => {
+  let dest
+
+  beforeEach(() => {
+    dest = fs.mkdtempSync(path.join(os.tmpdir(), 'tardis-explicit-'))
+  })
+
+  after(() => {
+    fs.rmSync(dest, { recursive: true, force: true })
+  })
+
+  for (const skill of EXPLICIT_ONLY) {
+    const skillDir = path.join(SKILLS_SRC, skill)
+
+    it(`${skill} disables model invocation in the SKILL.md frontmatter`, () => {
+      const source = fs.readFileSync(path.join(skillDir, 'SKILL.md'), 'utf8')
+      const frontmatter = source.match(/^---\n([\s\S]*?)\n---/)[1]
+
+      assert.match(frontmatter, /^disable-model-invocation: true$/m)
+    })
+
+    it(`${skill} ships a Codex policy that disables implicit invocation`, () => {
+      const policy = fs.readFileSync(path.join(skillDir, 'agents', 'openai.yaml'), 'utf8')
+
+      assert.match(policy, /^policy:\n {2}allow_implicit_invocation: false$/m)
+    })
+
+    it(`${skill} carries the Codex policy through copyDir`, () => {
+      const target = path.join(dest, skill)
+
+      cli.copyDir(skillDir, target)
+
+      assert.equal(
+        fs.readFileSync(path.join(target, 'agents', 'openai.yaml'), 'utf8'),
+        fs.readFileSync(path.join(skillDir, 'agents', 'openai.yaml'), 'utf8')
+      )
+    })
+  }
+
+  for (const skill of ['commit', 'create-pr']) {
+    it(`${skill} stays auto-loadable`, () => {
+      const source = fs.readFileSync(path.join(SKILLS_SRC, skill, 'SKILL.md'), 'utf8')
+
+      assert.doesNotMatch(source, /^disable-model-invocation:/m)
+      assert.ok(!fs.existsSync(path.join(SKILLS_SRC, skill, 'agents')))
+    })
+  }
+})
+
 describe('internals: resolveDestFor / destLabelFor', () => {
   it('resolves project scope relative to cwd', () => {
     const dest = cli.resolveDestFor('claude', 'project')

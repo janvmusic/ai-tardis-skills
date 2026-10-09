@@ -1,6 +1,7 @@
 ---
 name: polish
-description: Clean up style and structure in a changelist — uncommitted changes by default, or a named path/file or a PR — against rules the user has documented per language, accumulating a rule set meant to eventually graduate into the project's AGENTS.md/CLAUDE.md. Use when the user says "polish this", "clean this up", or wants a pass over code they (or an agent) just wrote before committing, or over the files in a PR. Never changes behavior and never hunts for bugs — use code-review for that.
+description: Clean up style and structure in a changelist — uncommitted changes by default, or a named path/file or a PR — against rules the user has documented per language, accumulating a rule set meant to eventually graduate into the project's AGENTS.md/CLAUDE.md. Never changes behavior and never hunts for bugs — use code-review for that. Runs only when invoked explicitly by name.
+disable-model-invocation: true
 ---
 
 # Polish Skill
