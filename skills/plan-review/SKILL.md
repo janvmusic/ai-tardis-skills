@@ -1,6 +1,7 @@
 ---
 name: plan-review
-description: Two senior reviewers — a Staff Engineer and a Software Architect — critique an implementation plan and print merged, persona-labeled feedback to the console. Use when the user wants a plan reviewed, stress-tested for readiness, or mentions "plan-review".
+description: Two senior reviewers — a Staff Engineer and a Software Architect — critique an implementation plan and print merged, persona-labeled feedback to the console. Runs only when invoked explicitly by name.
+disable-model-invocation: true
 ---
 
 # Plan Review

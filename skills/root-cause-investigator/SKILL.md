@@ -1,6 +1,7 @@
 ---
 name: root-cause-investigator
-description: Use this skill when the user reports an error, bug, issue, or unexpected behavior in the codebase. This skill should be used proactively whenever the user mentions problems like 'this isn't working', 'getting an error', 'something is broken', or describes any malfunction.
+description: Applies the 5-Why methodology to identify the root cause of an error, bug or unexpected behavior before proposing solutions. Runs only when invoked explicitly by name.
+disable-model-invocation: true
 ---
 
 # Root Cause Investigator
