@@ -1,6 +1,6 @@
 ---
 name: plan-review
-description: Two senior reviewers — a Staff Engineer and a Software Architect — critique an implementation plan and print merged, persona-labeled feedback to the console. Runs only when invoked explicitly by name.
+description: Two senior reviewers, a Staff Engineer and a Software Architect, critique an implementation plan and print a numbered, leveled, persona-labeled review to the console. Runs only when invoked explicitly by name.
 disable-model-invocation: true
 ---
 
@@ -28,7 +28,7 @@ If the user asks to review a plan that does not exist yet, do NOT start intervie
 - **[Staff Engineer]** — pragmatic delivery lens: execution risk, edge cases, testing, observability, sequencing, and whether the plan is actionable by an implementer.
 - **[Software Architect]** — systemic lens: architecture, boundaries, coupling, data model, security, performance, and long-term maintainability.
 
-Every feedback point MUST be prefixed with the persona tag `[Staff Engineer]` or `[Software Architect]`.
+Every feedback point MUST carry the persona tag `[Staff Engineer]` or `[Software Architect]`, placed right after its level.
 
 ## Getting the Plan
 
@@ -55,30 +55,59 @@ Evaluate the plan across all of the following:
 
 Print the review to the **console** (do not write a file unless the user asks).
 
-Structure the output as follows:
+### Levels
+
+Every point MUST carry exactly one level, judged by whether an AI agent or a Junior Developer could execute the plan correctly:
+
+- **Blocker** — they cannot proceed correctly, or the result would break a stated requirement.
+- **Should-fix** — they can execute the plan, but it will likely cause rework, a bug or a gap.
+- **Nit** — wording or polish; safe to ignore.
+
+### Format
 
 ```
 ## Plan Review
 
 ### Feedback
 
-- [Staff Engineer] <point>
-- [Software Architect] <point>
-- [Staff Engineer] <point>
-...
+1. [Blocker] [Staff Engineer] <problem and fix>
+2. [Should-fix] [Software Architect] <problem and fix>
+3. [Nit] [Staff Engineer] <problem and fix>
 
 ### Readiness Verdict
 
-<Ready | Ready with changes | Not ready> — <one-line rationale>
+<Ready | Ready with changes | Not ready>, <one-line rationale naming the counts>
+```
+
+Example:
+
+```
+1. [Blocker] [Staff Engineer] The plan says every user must send an account ID, but the ticket asks for it only from guests. Members should default to their own account. Make it required for guests only and keep the existing 403 for another account.
+2. [Should-fix] [Software Architect] A nearby gold clinic for service A can hide silver clinics needed for service B. Decide whether that is intended and add a mixed-service test.
+3. [Nit] [Staff Engineer] Slice 3 and slice 4 use different names for the same endpoint. Pick one.
+
+### Readiness Verdict
+
+Not ready, 1 blocker and 1 should-fix.
 ```
 
 Guidelines:
 
 - Merge both personas into one `Feedback` list; do not create separate per-persona sections.
-- Order points by importance (highest-impact first), not by persona.
-- Each point should be specific and actionable: state the concern and, where useful, a concrete suggestion.
-- If a dimension has no issues, do not pad — omit it.
-- The verdict is one of **Ready**, **Ready with changes**, or **Not ready**, followed by a single-line rationale.
+- Sort by level: all Blockers, then all Should-fix, then all Nits. Within a level, put the highest-impact point first. Number the points after sorting, starting at 1.
+- Write each point in plain language, in one or two sentences: what goes wrong for the implementer, then the fix. Cite a file path or line only when it is the evidence for the point.
+- If a level has no points, omit it. Do not pad.
+- The verdict follows the highest level present:
+  - any **Blocker**: **Not ready**
+  - no Blocker but at least one **Should-fix**: **Ready with changes**
+  - only Nits or no points: **Ready**
+- The rationale is a single line naming the counts, for example "Not ready, 2 blockers and 3 should-fix".
+
+### Table Offer
+
+After the verdict, and only when there is at least one point, ask whether the user wants the feedback as a table. Ask it as a multiple choice question following **Asking Questions** below, with the options "Yes, as a table" and "No, keep the list".
+
+If the user says yes, reprint the points once, in the same order, as a table with the columns `# | Level | Persona | Problem and fix`. Do not repeat the verdict.
 
 ## Asking Questions
 
