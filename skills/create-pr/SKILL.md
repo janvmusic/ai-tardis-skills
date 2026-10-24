@@ -80,9 +80,8 @@ published release notes verbatim.
    If it exists, use it — do not ask anything.
 4. Else ask the user (multiple choice): "How should this PR's body be
    structured?"
-   - **Use the default template**: write the **Default Template** below to
-     `references/pr_template.md` verbatim (everything from "### Sections"
-     onward, not this instruction), then use it.
+   - **Use the default template**: copy `references/default-pr-template.md`
+     to `references/pr_template.md` verbatim, then use it.
    - **Describe a custom format**: ask what sections/structure to use, write
      the derived structure to `references/pr_template.md`, then use it.
    - **Mirror an example PR**: ask for the PR's URL, fetch its body (e.g.
@@ -91,39 +90,6 @@ published release notes verbatim.
 
 Whichever branch runs, the result is written to `references/pr_template.md`
 so this question is never asked again in the same project.
-
-## Default Template
-
-The content from "### Sections" below is what gets written to
-`references/pr_template.md` when the user picks "use the default template" —
-nothing above that line is part of the file.
-
-### Sections
-
-```markdown
-## Summary
-
-Brief description of what this PR does. 1-3 sentences max.
-
-Closes #{ticket-id}
-
-## Why
-
-Why this change is needed.
-
-## How
-
-Key technical decisions or approach. Skip if obvious from the diff.
-
-## Testing
-
-How to verify this works. Manual steps if needed.
-
-## Notes (optional)
-
-Anything the reviewer should know: follow-ups, known limitations,
-deployment considerations.
-```
 
 ## Rules
 
