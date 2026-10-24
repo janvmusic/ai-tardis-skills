@@ -3,6 +3,8 @@
 ```markdown
 ## Plan Review
 
+Reviewed by: {model name, e.g. "Claude" or "Codex"}
+
 ### Feedback
 
 1. [Blocker] [Staff Engineer] <problem and fix>
