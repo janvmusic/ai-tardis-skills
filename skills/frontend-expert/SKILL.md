@@ -1,6 +1,7 @@
 ---
 name: frontend-expert
-description: Use when building, designing, or reviewing any part of a React + TypeScript application. ALWAYS invoke for UI and UX.
+description: Use when building, designing, or reviewing any part of a React + TypeScript application. Runs only when invoked explicitly by name.
+disable-model-invocation: true
 ---
 
 > **DEPRECATED**: This skill will be removed in a future release. Do not
