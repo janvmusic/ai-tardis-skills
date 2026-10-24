@@ -24,6 +24,8 @@ The plan is read by people before it is read by an agent. These rules apply to e
 
 If no ticket number is known, use the short title alone.
 
+On the line below the title, add `Planned by: {model name, e.g. "Claude" or "Codex"}`, naming the model that wrote the plan.
+
 ## 1. Overview
 
 Four subsections, in this order:

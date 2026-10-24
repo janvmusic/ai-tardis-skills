@@ -79,7 +79,7 @@ The plan MUST follow `references/plan-template.md`: the title, then all six sect
 
 ### Before presenting the plan
 
-Verify the title and every one of the six sections are present and populated, that sections 3, 4, and 5 are specific rather than placeholders, that decisions are numbered continuously, that every manual test step has an Expect, and that every list item sits on its own line. If any is missing or vague, fix it **before** showing me the plan — do not present a partial plan and offer to fill in the rest afterwards.
+Verify the title, the `Planned by` line and every one of the six sections are present and populated, that sections 3, 4, and 5 are specific rather than placeholders, that decisions are numbered continuously, that every manual test step has an Expect, and that every list item sits on its own line. If any is missing or vague, fix it **before** showing me the plan — do not present a partial plan and offer to fill in the rest afterwards.
 
 ## Notes
 
