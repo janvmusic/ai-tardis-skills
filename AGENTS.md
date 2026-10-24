@@ -1,4 +1,4 @@
-# CLAUDE.md — ai-tardis-skills
+# AGENTS.md — ai-tardis-skills
 
 This repository is a centralized collection of skill definitions for Claude Code. Skills are specialized instruction sets that guide AI behavior for specific tasks and domains.
 
@@ -27,7 +27,7 @@ skills/
     └── agents/
         └── openai.yaml  # Codex explicit-only policy; every skill except commit and create-pr
 evals/                   # Behavioral cases for commit, create-pr and polish
-personal/                # Preference files (CLAUDE.md, AGENTS.md symlink); not installed by the CLI
+personal/                # Preference file (AGENTS.md); not installed by the CLI
 src/                     # README assets
 test/cli.test.js         # Spec for the CLI
 Formula/tardis-ai.rb     # Homebrew formula — bot-maintained, do not edit by hand
