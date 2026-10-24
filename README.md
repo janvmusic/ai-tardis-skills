@@ -25,7 +25,7 @@ Every skill except `commit` and `create-pr` runs only when you invoke it by name
 | [create-pr](skills/create-pr/SKILL.md) | Opens a GitHub PR with a structured description. Loads automatically |
 | [plan-review](skills/plan-review/SKILL.md) | A Staff Engineer and a Software Architect critique a plan with numbered, leveled feedback |
 | [unravel](skills/unravel/SKILL.md) | Interviews you about a plan until every decision branch is resolved |
-| [root-cause-investigator](skills/root-cause-investigator/SKILL.md) | Finds the root cause of a bug with 5-Why before proposing fixes |
+| [rca-investigator](skills/rca-investigator/SKILL.md) | Finds the root cause of a bug with 5-Why before proposing fixes |
 | [read-jira-ticket](skills/read-jira-ticket/SKILL.md) | Loads a Jira ticket via ACLI and summarizes it |
 
 Beta (behavior may change): [polish](skills/polish/SKILL.md) cleans up style in a changelist without changing behavior.
@@ -41,7 +41,7 @@ OpenCode has no per-skill flag. To require approval before these load, add to `o
       "code-review": "ask",
       "plan-review": "ask",
       "unravel": "ask",
-      "root-cause-investigator": "ask",
+      "rca-investigator": "ask",
       "read-jira-ticket": "ask",
       "polish": "ask"
     }
