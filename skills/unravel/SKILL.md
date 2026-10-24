@@ -75,11 +75,11 @@ For this task, you and I are going to be a team. The hats you are going to be us
 
 ## Plan Structure
 
-The plan MUST follow `references/plan-template.md`: all six sections, in order, every time.
+The plan MUST follow `references/plan-template.md`: the title, then all six sections in order, every time, formatted by its Formatting Rules so a person can read it.
 
 ### Before presenting the plan
 
-Verify every one of the six sections is present and populated, and that sections 3, 4, and 5 are specific rather than placeholders. If any is missing or vague, fix it **before** showing me the plan — do not present a partial plan and offer to fill in the rest afterwards.
+Verify the title and every one of the six sections are present and populated, that sections 3, 4, and 5 are specific rather than placeholders, that decisions are numbered continuously, that every manual test step has an Expect, and that every list item sits on its own line. If any is missing or vague, fix it **before** showing me the plan — do not present a partial plan and offer to fill in the rest afterwards.
 
 ## Notes
 
