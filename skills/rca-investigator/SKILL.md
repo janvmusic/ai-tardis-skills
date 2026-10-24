@@ -42,6 +42,8 @@ Investigate a reported error, bug or unexpected behavior with the 5-Why methodol
 ## Report Format
 
 ```
+Investigated by: {model name, e.g. "Claude" or "Codex"}
+
 ## Issue Summary
 
 <one or two lines>
