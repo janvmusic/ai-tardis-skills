@@ -1,6 +1,7 @@
 ---
 name: unravel
-description: Interview the user relentlessly about a plan or design until reaching a shared understanding, resolving each branch of the decision tree. Use when the user wants to stress-test a plan, get grilled on their design, or mentions "unravel".
+description: Interview the user relentlessly about a plan or design until reaching a shared understanding, resolving each branch of the decision tree. Runs only when invoked explicitly by name.
+disable-model-invocation: true
 ---
 
 # Unravel Skill

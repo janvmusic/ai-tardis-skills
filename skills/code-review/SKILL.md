@@ -1,6 +1,7 @@
 ---
 name: code-review
-description: Perform thorough code reviews on branch changes, evaluating bugs, performance, security, code quality, architecture, and testing.
+description: Perform thorough code reviews on branch changes, evaluating bugs, performance, security, code quality, architecture, and testing. Runs only when invoked explicitly by name.
+disable-model-invocation: true
 ---
 
 # Code Review
