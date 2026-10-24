@@ -4,9 +4,7 @@ IMPORTANT: The emojis in the section headers below are part of this template and
 
 Structure your review as follows:
 
-## Reviewed By
-
-{Model name, e.g., "Claude", "Codex"}
+Reviewed by: {model name, e.g. "Claude" or "Codex"}
 
 ## Summary
 
