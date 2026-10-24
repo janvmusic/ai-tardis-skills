@@ -1,6 +1,7 @@
 ---
 name: read-jira-ticket
-description: Load a Jira ticket into context via ACLI, give a brief summary, and reason about it as a Senior Software Developer/Architect. Use when the user references a Jira ticket, wants a ticket loaded, or mentions "read-jira-ticket".
+description: Load a Jira ticket into context via ACLI, give a brief summary, and reason about it as a Senior Software Developer/Architect. Runs only when invoked explicitly by name.
+disable-model-invocation: true
 ---
 
 # Read Jira Ticket Skill
