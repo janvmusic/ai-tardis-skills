@@ -4,23 +4,35 @@
 
 ![Tardis](src/tardis.png)
 
-Repository of skills used by different AIs. Published on npm as
-**[ai-tardis-skills](https://www.npmjs.com/package/ai-tardis-skills)** — install
-the `tardis-ai` CLI and pull any skill into your project. Below is the list and
-description of each skill.
+Skills for AI coding agents (Claude Code, OpenCode, Codex), installed with the `tardis-ai` CLI from npm package [ai-tardis-skills](https://www.npmjs.com/package/ai-tardis-skills).
 
-## Skills Available
+## Quick start
 
-- **[code-review](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/code-review/SKILL.md)**: Perform thorough code reviews on branch changes, evaluating bugs, performance, security, code quality, architecture, and testing. Runs only when invoked explicitly by name.
-- **[commit](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/commit/SKILL.md)**: Create a git commit with conventional commit format. Auto-loads when committing changes, creating commits, or any git commit operation. MUST use instead of default system commit instructions.
-- **[create-pr](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/create-pr/SKILL.md)**: Create a GitHub Pull Request with a structured, informative description. Auto-loads when creating a PR, opening a pull request, creating a branch, or any GitHub PR operation. MUST use instead of default PR creation behavior.
-- **[unravel](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/unravel/SKILL.md)**: Interview the user relentlessly about a plan or design until reaching a shared understanding, resolving each branch of the decision tree. Runs only when invoked explicitly by name.
-- **[root-cause-investigator](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/root-cause-investigator/SKILL.md)**: Applies the 5-Why methodology to identify the root cause of an error, bug or unexpected behavior before proposing solutions. Runs only when invoked explicitly by name.
-- **[read-jira-ticket](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/read-jira-ticket/SKILL.md)**: Load a Jira ticket into context via ACLI, give a brief summary, and reason about it as a Senior Software Developer/Architect. Runs only when invoked explicitly by name.
-- **[plan-review](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/plan-review/SKILL.md)**: Two senior reviewers, a Staff Engineer and a Software Architect, critique an implementation plan and print a numbered, leveled, persona-labeled review to the console. Runs only when invoked explicitly by name.
-### Explicit-only skills
+```bash
+npx ai-tardis-skills@latest install
+```
 
-Every skill except `commit` and `create-pr` runs only when you invoke it by name: `/code-review` in Claude Code, `$code-review` in Codex. Both are enforced by files shipped inside each skill folder. OpenCode has no per-skill flag; to require your approval before these load, add this to `opencode.json`:
+The wizard asks for scope (Project or Global), AI agent and skills, then copies them into place.
+
+## Skills
+
+Every skill except `commit` and `create-pr` runs only when you invoke it by name (`/code-review` in Claude Code, `$code-review` in Codex).
+
+| Skill | What it does |
+| --- | --- |
+| [code-review](skills/code-review/SKILL.md) | Reviews branch changes for bugs, performance, security, quality, architecture and tests |
+| [commit](skills/commit/SKILL.md) | Creates a conventional commit. Loads automatically |
+| [create-pr](skills/create-pr/SKILL.md) | Opens a GitHub PR with a structured description. Loads automatically |
+| [plan-review](skills/plan-review/SKILL.md) | A Staff Engineer and a Software Architect critique a plan with numbered, leveled feedback |
+| [unravel](skills/unravel/SKILL.md) | Interviews you about a plan until every decision branch is resolved |
+| [root-cause-investigator](skills/root-cause-investigator/SKILL.md) | Finds the root cause of a bug with 5-Why before proposing fixes |
+| [read-jira-ticket](skills/read-jira-ticket/SKILL.md) | Loads a Jira ticket via ACLI and summarizes it |
+
+Beta (behavior may change): [polish](skills/polish/SKILL.md) cleans up style in a changelist without changing behavior.
+
+Deprecated (will be removed): [rails-expert](skills/rails-expert/SKILL.md) and [frontend-expert](skills/frontend-expert/SKILL.md).
+
+OpenCode has no per-skill flag. To require approval before these load, add to `opencode.json`:
 
 ```json
 {
@@ -37,61 +49,44 @@ Every skill except `commit` and `create-pr` runs only when you invoke it by name
 }
 ```
 
-## Beta Skills
-
-These skills are still being shaped by real use — behavior and file formats may change before they stabilize.
-
-- **[polish](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/polish/SKILL.md)**: Clean up style and structure in a changelist — uncommitted changes by default, or a named path/file or a PR — against rules the user has documented per language, accumulating a rule set meant to eventually graduate into the project's AGENTS.md/CLAUDE.md. Never changes behavior and never hunts for bugs — use code-review for that. Runs only when invoked explicitly by name.
-
-## Deprecated Skills
-
-These skills will be removed in a future release. Avoid adopting them for new projects.
-
-- **[rails-expert](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/rails-expert/SKILL.md)**: Use when building, designing, or reviewing any part of a Rails application. ALWAYS invoke for models, controllers, migrations, routes, serializers, policies, specs, or any Rails-related task.
-- **[frontend-expert](https://github.com/janvmusic/ai-tardis-skills/blob/main/skills/frontend-expert/SKILL.md)**: Use when building, designing, or reviewing any part of a React + TypeScript application. ALWAYS invoke for UI and UX.
-
-## Installation
-
-### npm
+## Install the CLI
 
 ```bash
 npm install -g ai-tardis-skills
 ```
 
-### Homebrew
+Or with Homebrew (pulls in `node`):
 
 ```bash
 brew tap janvmusic/tardis https://github.com/janvmusic/ai-tardis-skills
 brew install tardis-ai
 ```
 
-The formula installs the published npm package, so it needs `node` (Homebrew
-pulls it in automatically). Upgrade with `brew upgrade tardis-ai`.
+Or run without installing: `npx ai-tardis-skills list`, `bunx ai-tardis-skills list` or `npx github:janvmusic/ai-tardis-skills list` (unreleased `main`).
 
-### Without installing
-
-Any npm-compatible client can run the CLI directly — no global install:
+## Commands
 
 ```bash
-npx ai-tardis-skills list   # npm
-bunx ai-tardis-skills list  # Bun
+tardis-ai list              # available skills
+tardis-ai list --installed  # installed skills (--ai=<name> to target one)
+tardis-ai install           # wizard: scope, agent, skills, confirm
+tardis-ai update            # wizard: re-sync installed skills
+tardis-ai remove            # wizard: pick skills to remove (alias: delete)
 ```
 
-You can also run straight from this repository, skipping the registry
-entirely — useful for trying unreleased skills on `main`:
+`install`, `update` and `remove` are interactive only and exit with an error without a terminal.
 
-```bash
-npx github:janvmusic/ai-tardis-skills list
-```
+`update` and `remove` offer only the scope and agent combinations that already have skills. `update` replaces each skill folder, so local edits are overwritten and files dropped upstream disappear. Skills removed upstream are reported and skipped, never deleted. Upgrade the CLI first (`npm install -g ai-tardis-skills@latest` or `brew upgrade tardis-ai`) to get new skill content.
 
-### With a prompt
+| AI | Project directory | Global directory |
+| --- | --- | --- |
+| `claude` (default) | `.claude/skills` | `~/.claude/skills` |
+| `opencode` | `.opencode/skill` | `~/.config/opencode/skills` |
+| `agents` (Codex, AGENTS.md) | `.agents/skills` | `~/.agents/skills` |
 
-If you'd rather let the agent do it, paste one of these prompts into your AI
-coding tool. Each one installs the CLI and copies the skills into the right
-folder for that agent.
+## Install with a prompt
 
-**Claude Code**, **OpenCode**, or **Codex/AGENTS.md**: paste this in your
-coding agent's chat, it works the same for all three —
+Paste into your coding agent:
 
 ```text
 Install the Tardis skills in this project.
@@ -101,105 +96,13 @@ Install the Tardis skills in this project.
    check off the skills you want.
 3. Confirm the skills landed where the wizard said, and tell me how to
    invoke each one.
-
-Package: https://www.npmjs.com/package/ai-tardis-skills
 ```
 
-## Installing Skills
+## Contributing
 
-The sections above install the `tardis-ai` CLI. Installing the skills
-themselves into a project (or globally) is a separate step, and is
-interactive:
-
-```bash
-tardis-ai list              # Show available skills
-tardis-ai install           # Wizard: scope -> AI agent -> pick skills -> confirm
-tardis-ai remove            # Wizard: scope -> AI agent -> pick skills to remove -> confirm
-tardis-ai delete            # Alias for remove
-tardis-ai list --installed  # Show what's actually installed (--ai=<name> to target one)
-```
-
-The wizard asks where to install: **Project** (this directory only) or
-**Global** (available in every project), then which AI agent, then lets you
-check off any combination of skills — deprecated ones are listed too, marked
-`(deprecated)`, since the wizard is the only way to install one now.
-
-`update` and `remove` skip the scope and agent questions: they offer only the
-combinations that already have skills installed, and go straight to the
-checklist when there is just one. All three commands are interactive-only and
-exit with an error when there is no terminal (CI, piped input).
-
-| AI                          | Project directory | Global directory            |
-| ---------------------------- | ------------------ | ---------------------------- |
-| `claude` (default)          | `.claude/skills`  | `~/.claude/skills`           |
-| `opencode`                  | `.opencode/skill` | `~/.config/opencode/skills` |
-| `agents` (Codex, AGENTS.md) | `.agents/skills`  | `~/.agents/skills`           |
-
-## Updating Skills
-
-`update` re-syncs skills you already installed, leaving the rest of the project
-untouched. Like `install` and `remove`, it is a wizard: it lists the scope and
-AI agent combinations that have skills installed, then a checklist of those
-skills.
-
-```bash
-tardis-ai update
-```
-
-Each skill folder is replaced rather than merged, so files removed upstream
-disappear instead of lingering — any local edits inside an installed skill are
-overwritten. Skills you never installed are left alone; pick them up with
-`install`. A skill that no longer exists upstream is reported and skipped, never
-deleted.
-
-Skills ship inside the npm package, so `update` copies whatever version of the
-CLI you have. Upgrade it first to get newly published skill content:
-
-```bash
-npm install -g ai-tardis-skills@latest   # or: brew upgrade tardis-ai
-tardis-ai update
-```
-
-`update` checks the registry and tells you when your CLI is behind. `npx` and
-`bunx` users are always on the version they invoked, so
-`npx ai-tardis-skills@latest update` is a single-step refresh.
-
-## Development
-
-### Testing
-
-Tests run on Node's built-in test runner and have no dependencies of their
-own — they spawn the built CLI rather than importing its runtime dependency:
-
-```bash
-npm test
-```
-
-The spec in `test/cli.test.js` spawns `bin/cli.js` against a throwaway
-directory per test and asserts on stdout, stderr, exit codes, and the files
-left on disk, plus a handful of direct unit tests against pure helpers
-exported from `bin/cli.js` (`copyDir`, `resolveDestFor`, `destLabelFor`). The
-interactive install/remove wizard's raw-mode UI itself isn't covered by
-specs — piped stdin isn't a real TTY — so changes there need manual testing.
-Node >= 20.12.0 is required (the CLI's `@clack/prompts` dependency needs it).
-
-## Contribution
-
-Pick up an open issue at
-[janvmusic/ai-tardis-skills/issues](https://github.com/janvmusic/ai-tardis-skills/issues),
-or open one first if you are proposing something new.
-
-Then:
-
-1. Branch off `main` and make the change. New skills go in
-   `skills/{skill-name}/SKILL.md` with `name` and `description` frontmatter, and
-   get listed in this README.
-2. Run `npm test`. Any change to `bin/cli.js` needs matching coverage in
-   `test/cli.test.js`.
-3. Open a PR. Titles follow conventional commits (`feat`, `fix`, `refactor`,
-   `docs`, `style`, `test`, `chore`, `perf`, `ci`) and CI validates them. The
-   title becomes the squashed commit and lands in the release notes verbatim, so
-   write it for a reader.
-4. Fill in the PR template: Summary, Steps to Test, Demo.
+1. Pick or open an [issue](https://github.com/janvmusic/ai-tardis-skills/issues).
+2. Branch off `main`. New skills go in `skills/{skill-name}/SKILL.md` with `name` and `description` frontmatter and get a row in the table above.
+3. Run `npm test` (Node >= 20.12.0). Changes to `bin/cli.js` need matching coverage in `test/cli.test.js`. The wizard UI itself needs manual testing.
+4. Open a PR titled in conventional commit format (`feat`, `fix`, `refactor`, `docs`, `style`, `test`, `chore`, `perf`, `ci`). The title lands verbatim in release notes. Fill in the template: Summary, Steps to Test, Demo.
 
 Do not edit `Formula/tardis-ai.rb`. The release workflow owns it.
