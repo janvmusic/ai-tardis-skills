@@ -1,6 +1,7 @@
 ---
 name: rails-expert
-description: Use when building, designing, or reviewing any part of a Rails application. ALWAYS invoke for models, controllers, migrations, routes, serializers, policies, specs, or any Rails-related task.
+description: Use when building, designing, or reviewing any part of a Rails application. Runs only when invoked explicitly by name.
+disable-model-invocation: true
 ---
 
 > **DEPRECATED**: This skill will be removed in a future release. Do not

@@ -275,7 +275,7 @@ const EXPLICIT_ONLY = [
   'code-review',
   'plan-review',
   'unravel',
-  'root-cause-investigator',
+  'rca-investigator',
   'read-jira-ticket',
   'polish',
 ]

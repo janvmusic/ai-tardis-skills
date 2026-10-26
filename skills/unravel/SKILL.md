@@ -25,12 +25,12 @@ Every question MUST be **multiple choice**, never open-ended prose.
 
 **How to ask depends on the CLI you are running in.** Use the interactive tool when one exists, so I can answer with a single keystroke:
 
-| CLI | Tool |
-| --- | --- |
-| Claude Code | `AskUserQuestion` |
-| OpenCode | `question` |
-| Codex — Plan mode | its interactive choices selector (`request_user_input`) |
-| Codex — Default mode, or any other harness | none — use the text fallback |
+| CLI                                        | Tool                                                    |
+| ------------------------------------------ | ------------------------------------------------------- |
+| Claude Code                                | `AskUserQuestion`                                       |
+| OpenCode                                   | `question`                                              |
+| Codex — Plan mode                          | its interactive choices selector (`request_user_input`) |
+| Codex — Default mode, or any other harness | none — use the text fallback                            |
 
 **Text fallback:** print the question, then a **numbered list** of options, and ask me to reply with a number.
 
@@ -61,68 +61,26 @@ For this task, you and I are going to be a team. The hats you are going to be us
 ## Workflow
 
 1. I'll give you a summary of what kind of work I want to do.
-2. There should not be any ambiguity; if there are or you detect an unclear requirement, your duty is to ask questions to clarify these situations. 
+2. There should not be any ambiguity; if there are or you detect an unclear requirement, your duty is to ask questions to clarify these situations.
 3. Once you are ready, you will document the plan to implement the new feature or project.
    - The plan MUST follow **Plan Structure** below — every section, every time.
-   - Ask in which format I want the plan (console, markdown, or another format), following **Asking Questions** above. The format controls how the plan is *rendered*, never which sections it contains. A console plan is not an abridged plan.
+   - Ask in which format I want the plan (console, markdown, or another format), following **Asking Questions** above. The format controls how the plan is _rendered_, never which sections it contains. A console plan is not an abridged plan.
 4. Ask whether to save the plan to a file.
    - Ask following **Asking Questions** above. Put the default save option **first**: save to `artifacts/{ticket}/plan.md`, where `{ticket}` is the ticket number (e.g. `artifacts/PROJ-1234/plan.md`).
    - If no ticket number is known, ask for it, or fall back to a short kebab-case slug derived from the plan's title.
    - If I decline, keep the plan in the console only and do not write any file.
    - When saving, create the `artifacts/{ticket}/` directory if it does not exist.
-5. If the project is growing in scope and complexity, then provide insights on how we can split it into different smaller projects. 
+5. If the project is growing in scope and complexity, then provide insights on how we can split it into different smaller projects.
 6. Explain the requirements to be handled by an AI Agent or a JR Developer
 
 ## Plan Structure
 
-The plan MUST contain **all** of the sections below, in this order. A section is never dropped for brevity. If one genuinely does not apply, keep the heading and write a single line explaining why — an explicit "not applicable, because …" is acceptable; silence is not.
-
-### 1. Overview
-
-2-4 lines: what we are building and why. No restating of the interview.
-
-### 2. Decisions
-
-The decisions we resolved during the interview, as a short list of `<decision> — <chosen option>`. This is the record of what was settled, so the implementer does not reopen it.
-
-### 3. Implementation Slices
-
-**REQUIRED.** Break the work into ordered, independently shippable slices — not a flat wall of tasks. Each slice MUST have:
-
-- **Goal** — one line: what is true after this slice that was not true before.
-- **Files / areas touched** — concrete paths where known.
-- **Steps** — numbered, concrete actions.
-- **Done when** — an observable condition, not "code is written".
-
-Sequence slices so each one leaves the system in a working state. Call out dependencies between slices explicitly. If the work is genuinely one slice, say so and still use this shape.
-
-### 4. Tests
-
-**REQUIRED.** The automated tests to write or update:
-
-- What each test covers, and which slice it belongs to.
-- New test files vs. existing ones to extend.
-- Edge cases and failure modes that MUST be covered.
-
-"Add tests" is not an acceptable entry — name them.
-
-### 5. Manual Test
-
-**REQUIRED.** A human-runnable verification script, separate from the automated tests:
-
-- Preconditions / setup (data, env, feature flags, seeded state).
-- Numbered steps to perform.
-- The expected observable result for each step.
-
-Written so someone who did not build the feature can follow it.
-
-### 6. Risks & Open Questions
-
-Known risks, rollback considerations, and anything still genuinely unresolved. Empty is fine — say "none" rather than omitting the heading.
+The plan MUST follow `references/plan-template.md`: the title, then all six sections in order, every time, formatted by its Formatting Rules so a person can read it.
 
 ### Before presenting the plan
 
-Verify every one of the six sections is present and populated, and that sections 3, 4, and 5 are specific rather than placeholders. If any is missing or vague, fix it **before** showing me the plan — do not present a partial plan and offer to fill in the rest afterwards.
+Verify the title, the `Planned by` line and every one of the six sections are present and populated, that sections 3, 4, and 5 are specific rather than placeholders, that decisions are numbered continuously, that every manual test step has an Expect, and that every list item sits on its own line. If any is missing or vague, fix it **before** showing me the plan — do not present a partial plan and offer to fill in the rest afterwards.
 
 ## Notes
+
 A developer will likely work on this plan. If you have any suggestions or comments that can help with the flow or AI implementation, then give them.

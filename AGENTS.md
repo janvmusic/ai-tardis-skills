@@ -1,4 +1,4 @@
-# CLAUDE.md — ai-tardis-skills
+# AGENTS.md — ai-tardis-skills
 
 This repository is a centralized collection of skill definitions for Claude Code. Skills are specialized instruction sets that guide AI behavior for specific tasks and domains.
 
@@ -23,13 +23,19 @@ bin/cli.js               # The tardis-ai CLI — the shipped product
 skills/
 └── {skill-name}/
     ├── SKILL.md         # Required — skill metadata and instructions
-    └── references/      # Optional — supporting reference documents
+    ├── references/      # Optional — supporting reference documents
+    └── agents/
+        └── openai.yaml  # Codex explicit-only policy; every skill except commit and create-pr
+evals/                   # Behavioral cases for commit, create-pr and polish
+personal/                # Preference file (AGENTS.md); not installed by the CLI
+src/                     # README assets
 test/cli.test.js         # Spec for the CLI
 Formula/tardis-ai.rb     # Homebrew formula — bot-maintained, do not edit by hand
-.github/workflows/       # CI: tests, PR title validation, release chain
+.github/workflows/       # CI: test.yml, pr-title.yml, release chain
 ```
 
 Skills ship inside the npm package, so the CLI and the skills release together.
+`personal/` and `evals/` do not ship.
 
 ## Skill Frontmatter Format
 
@@ -39,8 +45,21 @@ Every `SKILL.md` must begin with YAML frontmatter:
 ---
 name: { skill-name }
 description: { one-line description used for triggering and discovery }
+disable-model-invocation: true
 ---
 ```
+
+`disable-model-invocation: true` makes a skill explicit-only for Claude Code.
+Every skill sets it except `commit` and `create-pr`, which auto-load. Codex
+needs the matching `agents/openai.yaml`:
+
+```yaml
+policy:
+  allow_implicit_invocation: false
+```
+
+OpenCode has no per-skill flag; the README documents the `opencode.json`
+permission entry instead.
 
 ## Conventions
 
@@ -143,6 +162,11 @@ The release chain is automated and easy to break. Do not run these by hand.
 4. The same workflow then recomputes the tarball sha256 and commits a bump to
    `Formula/tardis-ai.rb`.
 
+`main` is protected by a ruleset: changes land through a PR, and the
+`Unit Tests` (`test.yml`) and `Validate PR title` (`pr-title.yml`) checks must
+pass on a branch that is up to date with `main`. Update a stale branch before
+merging.
+
 Consequences worth knowing:
 
 - **Never hand-edit `Formula/tardis-ai.rb`** — step 4 owns it.
@@ -156,8 +180,17 @@ Consequences worth knowing:
 1. Create a new directory under `skills/` with a hyphenated name
 2. Add a `SKILL.md` with required frontmatter and instructions
 3. Optionally add a `references/` folder for supporting documentation
-4. Add the skill to `README.md` following the existing list format:
+4. Add a row to the skills table in `README.md`:
 
 ```markdown
-- **[skill-name](skills/skill-name/SKILL.md)**: {description}
+| [skill-name](skills/skill-name/SKILL.md) | {one-line description} |
 ```
+
+5. Unless the skill must auto-load, make it explicit-only: set
+   `disable-model-invocation: true`, add `agents/openai.yaml`, and add the
+   skill to the `opencode.json` snippet in `README.md`.
+
+Beta skills (`polish`) are listed under a Beta line in the README. Deprecated
+skills (`rails-expert`, `frontend-expert`) are listed in `DEPRECATED_SKILLS`
+in `bin/cli.js`, marked `(deprecated)` in the wizard and listed under a
+Deprecated line in the README.

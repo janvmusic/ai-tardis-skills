@@ -51,12 +51,12 @@ Any user input (ticket key, whether to unravel) MUST be asked as a **multiple ch
 
 Use the interactive tool when the current CLI has one, so the user can answer with a single keystroke:
 
-| CLI | Tool |
-| --- | --- |
-| Claude Code | `AskUserQuestion` |
-| OpenCode | `question` |
-| Codex — Plan mode | its interactive choices selector (`request_user_input`) |
-| Codex — Default mode, or any other harness | none — use the text fallback |
+| CLI                                        | Tool                                                    |
+| ------------------------------------------ | ------------------------------------------------------- |
+| Claude Code                                | `AskUserQuestion`                                       |
+| OpenCode                                   | `question`                                              |
+| Codex — Plan mode                          | its interactive choices selector (`request_user_input`) |
+| Codex — Default mode, or any other harness | none — use the text fallback                            |
 
 **Text fallback:** print the question, then a **numbered list** of options, and ask the user to reply with a number.
 
