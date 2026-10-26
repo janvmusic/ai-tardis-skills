@@ -1,4 +1,6 @@
-# Output Template
+# Agent Output Template
+
+For an AI agent reader: one flat numbered list with machine-friendly tags.
 
 ```markdown
 ## Plan Review

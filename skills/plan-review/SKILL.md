@@ -28,7 +28,7 @@ If the user asks to review a plan that does not exist yet, do NOT start intervie
 - **[Staff Engineer]** — pragmatic delivery lens: execution risk, edge cases, testing, observability, sequencing, and whether the plan is actionable by an implementer.
 - **[Software Architect]** — systemic lens: architecture, boundaries, coupling, data model, security, performance, and long-term maintainability.
 
-Every feedback point MUST carry the persona tag `[Staff Engineer]` or `[Software Architect]`, placed right after its level.
+Every feedback point MUST carry its persona, `Staff Engineer` or `Software Architect`, placed as the chosen template shows.
 
 ## Getting the Plan
 
@@ -39,6 +39,15 @@ The plan comes from the user.
   - Provide the plan now (path or pasted text).
   - Run the `unravel` skill first to produce a plan, then review it.
 - Do NOT invent plan content. Everything reviewed MUST come from the plan the user supplies.
+
+## Audience
+
+Before reviewing, find out who will read the feedback.
+
+- If the user already said (for example "for a human" or "for an agent"), use that and do not ask.
+- Otherwise ask "Who is going to read the feedback?" as a multiple choice question (see **Asking Questions** below), with these options:
+  - A human reader (Recommended): grouped by level, with a title, where, problem and fix for each point.
+  - An AI agent: one flat numbered list with tags, easy to parse.
 
 ## Review Dimensions
 
@@ -65,13 +74,17 @@ Every point MUST carry exactly one level, judged by whether an AI agent or a Jun
 
 ### Format
 
-Read `references/output-template.md` and print the review in exactly that shape.
+Read the template for the chosen audience and print the review in exactly that shape:
+
+- Human reader: `references/output-human.md`
+- AI agent: `references/output-agent.md`
 
 Guidelines:
 
 - Merge both personas into one `Feedback` list; do not create separate per-persona sections.
 - Sort by level: all Blockers, then all Should-fix, then all Nits. Within a level, put the highest-impact point first. Number the points after sorting, starting at 1.
-- Write each point in plain language, in one or two sentences: what goes wrong for the implementer, then the fix. Cite a file path or line only when it is the evidence for the point.
+- Write each point in plain language: what goes wrong for the implementer, then the fix. Keep it to one or two sentences; the human template splits them into Problem and Fix lines. Cite a file path or line only when it is the evidence for the point.
+- Merge points that share a root cause into one point. Never drop a finding: the merged point's Fix names every distinct fix.
 - If a level has no points, omit it. Do not pad.
 - The verdict follows the highest level present:
   - any **Blocker**: **Not ready**
@@ -81,13 +94,13 @@ Guidelines:
 
 ### Table Offer
 
-After the verdict, and only when there is at least one point, ask whether the user wants the feedback as a table. Ask it as a multiple choice question following **Asking Questions** below, with the options "Yes, as a table" and "No, keep the list".
+Only for the AI agent audience; the human template already groups points by level. After the verdict, and only when there is at least one point, ask whether the user wants the feedback as a table. Ask it as a multiple choice question following **Asking Questions** below, with the options "Yes, as a table" and "No, keep the list".
 
 If the user says yes, reprint the points once, in the same order, as a table with the columns `# | Level | Persona | Problem and fix`. Do not repeat the verdict.
 
 ## Asking Questions
 
-Any user input (locating the plan, choosing to run `unravel`) MUST be asked as a **multiple choice** question.
+Any user input (locating the plan, choosing to run `unravel`, choosing the audience) MUST be asked as a **multiple choice** question.
 
 Use the interactive tool when the current CLI has one, so the user can answer with a single keystroke:
 
