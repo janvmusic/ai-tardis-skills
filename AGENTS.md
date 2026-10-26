@@ -132,6 +132,9 @@ permission entry instead.
   only one does). Without a TTY they exit 1 with "requires an interactive
   terminal", so the specs cover only argument rejection and the pure helpers
   (`refreshSkills`, `installedLocations`); the wizards are manual-test-only.
+- `update` and `remove` list only skills that ship in the package, so skills
+  installed another way are never offered. `remove` also lists `RETIRED_SKILLS`
+  (renamed or dropped skills) so they can still be cleaned up.
 - `--ai=<name>` selects the target for `list --installed`, parsed from any
   argument position in both `--ai=x` and `--ai x` forms. The wizards ask for
   the agent interactively instead.

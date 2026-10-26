@@ -26,6 +26,7 @@ const AGENT_LABELS = {
 }
 const DEFAULT_AI = 'claude'
 const DEPRECATED_SKILLS = ['frontend-expert', 'rails-expert']
+const RETIRED_SKILLS = ['root-cause-investigator']
 const PRESERVED_ON_UPDATE = [
   path.join('references', 'conventions.md'),
   path.join('references', 'pr_template.md'),
@@ -82,17 +83,22 @@ function installedSkills(dest) {
   )
 }
 
-function installedLocations() {
+function managedSkills(dest, includeRetired) {
+  const known = includeRetired ? [...availableSkills(), ...RETIRED_SKILLS] : availableSkills()
+  return installedSkills(dest).filter(s => known.includes(s))
+}
+
+function installedLocations(includeRetired = false) {
   return ['project', 'global'].flatMap(scope =>
     Object.keys(AI_TARGETS).map(agent => {
       const dest = resolveDestFor(agent, scope)
-      return { scope, agent, dest, destLabel: destLabelFor(agent, scope), installed: installedSkills(dest) }
+      return { scope, agent, dest, destLabel: destLabelFor(agent, scope), installed: managedSkills(dest, includeRetired) }
     })
   ).filter(l => l.installed.length > 0)
 }
 
-async function pickLocation(message, emptyMessage) {
-  const locations = installedLocations()
+async function pickLocation(message, emptyMessage, includeRetired = false) {
+  const locations = installedLocations(includeRetired)
   if (locations.length === 0) {
     p.outro(emptyMessage)
     return null
@@ -291,7 +297,7 @@ function isNewer(a, b) {
 async function removeWizard(invokedAs) {
   p.intro(`tardis-ai ${invokedAs}`)
 
-  const location = await pickLocation('Remove from where?', 'No skills installed in any Project or Global location.')
+  const location = await pickLocation('Remove from where?', 'No skills installed in any Project or Global location.', true)
   if (!location) return
   const { scope, agent, dest, destLabel, installed } = location
 
@@ -441,6 +447,7 @@ module.exports = {
   AI_TARGETS,
   GLOBAL_AI_TARGETS,
   DEPRECATED_SKILLS,
+  RETIRED_SKILLS,
   availableSkills,
   installedSkills,
   installedLocations,
