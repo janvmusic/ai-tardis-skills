@@ -369,6 +369,44 @@ describe('internals: installedLocations', () => {
   })
 })
 
+describe('internals: installedLocations filtering', () => {
+  const inProject = fn => {
+    const original = process.cwd()
+    process.chdir(project)
+    try {
+      return fn()
+    } finally {
+      process.chdir(original)
+    }
+  }
+  beforeEach(() => {
+    for (const name of ['commit', 'athena', 'root-cause-investigator']) {
+      fs.mkdirSync(path.join(project, '.claude', 'skills', name), { recursive: true })
+    }
+  })
+
+  it('hides skills that ai-tardis-skills does not ship', () => {
+    const [location] = inProject(() => cli.installedLocations().filter(l => l.scope === 'project'))
+
+    assert.deepEqual(location.installed, ['commit'])
+  })
+
+  it('shows retired skills only when asked', () => {
+    const [location] = inProject(() => cli.installedLocations(true).filter(l => l.scope === 'project'))
+
+    assert.deepEqual(location.installed.sort(), ['commit', 'root-cause-investigator'])
+  })
+
+  it('drops a location whose skills are all foreign', () => {
+    fs.rmSync(path.join(project, '.claude', 'skills', 'commit'), { recursive: true })
+    fs.rmSync(path.join(project, '.claude', 'skills', 'root-cause-investigator'), { recursive: true })
+
+    const locations = inProject(() => cli.installedLocations().filter(l => l.scope === 'project'))
+
+    assert.deepEqual(locations, [])
+  })
+})
+
 describe('version', () => {
   for (const flag of ['version', '--version', '-v']) {
     it(`prints the package version for "${flag}"`, () => {
