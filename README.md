@@ -12,7 +12,7 @@ Skills for AI coding agents (Claude Code, OpenCode, Codex), installed with the `
 npx ai-tardis-skills@latest install
 ```
 
-The wizard asks for scope (Project or Global), AI agent and skills, then copies them into place.
+The wizard asks for scope (Project or Global), AI agent and skills, then copies each skill once into `.tardis/skills` (Project) or `~/.tardis/skills` (Global) and symlinks it from the agent directory.
 
 ## Skills
 
@@ -73,18 +73,20 @@ tardis-ai list              # available skills
 tardis-ai list --installed  # installed skills (--ai=<name> to target one)
 tardis-ai install           # wizard: scope, agent, skills, confirm
 tardis-ai update            # wizard: re-sync installed skills
-tardis-ai remove            # wizard: pick skills to remove (alias: delete)
+tardis-ai delete            # wizard: pick skills to delete
 ```
 
-`install`, `update` and `remove` are interactive only and exit with an error without a terminal.
+`install`, `update` and `delete` are interactive only and exit with an error without a terminal.
 
-`update` and `remove` offer only the scope and agent combinations that already have skills. `update` replaces each skill folder, so local edits are overwritten and files dropped upstream disappear. Skills removed upstream are reported and skipped, never deleted. Upgrade the CLI first (`npm install -g ai-tardis-skills@latest` or `brew upgrade tardis-ai`) to get new skill content.
+`update` and `delete` offer only the scope and agent combinations that already have skills. `update` replaces each skill folder in `.tardis/skills`, so local edits are overwritten and files dropped upstream disappear. Skills removed upstream are reported and skipped, never deleted. Upgrade the CLI first (`npm install -g ai-tardis-skills@latest` or `brew upgrade tardis-ai`) to get new skill content.
 
 | AI | Project directory | Global directory |
 | --- | --- | --- |
 | `claude` (default) | `.claude/skills` | `~/.claude/skills` |
 | `opencode` | `.opencode/skill` | `~/.config/opencode/skills` |
 | `agents` (Codex, AGENTS.md) | `.agents/skills` | `~/.agents/skills` |
+
+These directories hold symlinks to the single copy in `.tardis/skills` (Project) or `~/.tardis/skills` (Global), so installing a skill for a second agent adds only a link. `delete` deletes the link and deletes the central copy once no agent links to it. `install` skips a skill whose agent path is already a real directory, such as a copy from an older release. `update` detects those old copies, tells you, and offers to delete each one and link it to the central copy (your `references/conventions.md` and `references/pr_template.md` are carried over); if you decline, the old copy is updated in place. `delete` still deletes old copies.
 
 ## Install with a prompt
 
