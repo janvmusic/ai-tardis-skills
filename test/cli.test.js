@@ -139,7 +139,7 @@ describe('--ai targeting', () => {
 })
 
 describe('wizard-only commands', () => {
-  for (const command of ['install', 'update', 'remove', 'delete']) {
+  for (const command of ['install', 'update', 'delete']) {
     it(`${command} rejects arguments and points to the wizard`, () => {
       const { status, stderr } = run(command, 'commit')
 
@@ -497,11 +497,11 @@ describe('internals: central install', () => {
     assert.deepEqual(cli.installedSkills(path.join(project, '.claude', 'skills')), ['commit'])
   })
 
-  it('removes only the agent link while another agent still uses the skill', () => {
+  it('deletes only the agent link while another agent still uses the skill', () => {
     inProject(() => {
       cli.installSkill('project', 'claude', 'commit')
       cli.installSkill('project', 'opencode', 'commit')
-      cli.removeSkill('project', 'claude', 'commit')
+      cli.deleteSkill('project', 'claude', 'commit')
     })
 
     assert.ok(!fs.existsSync(agentEntry('commit')))
@@ -509,22 +509,78 @@ describe('internals: central install', () => {
     assert.ok(installed('commit', path.join('.opencode', 'skill')))
   })
 
-  it('removes the central copy with the last link', () => {
+  it('deletes the central copy with the last link', () => {
     inProject(() => {
       cli.installSkill('project', 'claude', 'commit')
-      cli.removeSkill('project', 'claude', 'commit')
+      cli.deleteSkill('project', 'claude', 'commit')
     })
 
     assert.ok(!fs.existsSync(agentEntry('commit')))
     assert.ok(!fs.existsSync(central('commit')))
   })
 
-  it('removes a legacy copied directory like before', () => {
+  it('deletes a legacy copied directory like before', () => {
     seed()
 
-    inProject(() => cli.removeSkill('project', 'claude', 'commit'))
+    inProject(() => cli.deleteSkill('project', 'claude', 'commit'))
 
     assert.ok(!fs.existsSync(agentEntry('commit')))
+  })
+
+  it('flags a plain copy as legacy and a link as current', () => {
+    seed()
+    fs.rmSync(agentEntry('polish'), { recursive: true })
+    inProject(() => cli.installSkill('project', 'claude', 'polish'))
+    const dest = path.join(project, '.claude', 'skills')
+
+    assert.equal(cli.isLegacyCopy(dest, 'commit'), true)
+    assert.equal(cli.isLegacyCopy(dest, 'polish'), false)
+    assert.equal(cli.isLegacyCopy(dest, 'absent'), false)
+  })
+
+  it('migrates a legacy copy to a link and carries its customized files over', () => {
+    seed()
+    const conventions = path.join(agentEntry('commit'), 'references', 'conventions.md')
+    fs.mkdirSync(path.dirname(conventions), { recursive: true })
+    fs.writeFileSync(conventions, 'custom convention')
+
+    inProject(() => cli.migrateSkill('project', 'claude', 'commit'))
+
+    assert.ok(isLinkTo(agentEntry('commit'), central('commit')))
+    assert.equal(fs.readFileSync(path.join(central('commit'), 'references', 'conventions.md'), 'utf8'), 'custom convention')
+    assert.equal(cli.isLegacyCopy(path.join(project, '.claude', 'skills'), 'commit'), false)
+  })
+
+  it('keeps the existing central customizations when migrating a second legacy copy', () => {
+    seed()
+    seed(path.join('.agents', 'skills'))
+    const write = (dir, text) => {
+      const file = path.join(project, dir, 'commit', 'references', 'conventions.md')
+      fs.mkdirSync(path.dirname(file), { recursive: true })
+      fs.writeFileSync(file, text)
+    }
+    write(path.join('.claude', 'skills'), 'claude convention')
+    write(path.join('.agents', 'skills'), 'agents convention')
+
+    inProject(() => {
+      cli.migrateSkill('project', 'claude', 'commit')
+      cli.migrateSkill('project', 'agents', 'commit')
+    })
+
+    assert.equal(fs.readFileSync(path.join(central('commit'), 'references', 'conventions.md'), 'utf8'), 'claude convention')
+    assert.ok(isLinkTo(agentEntry('commit', path.join('.agents', 'skills')), central('commit')))
+  })
+
+  it('updates a legacy copy in place when it is not migrated', () => {
+    seed()
+    const stray = path.join(agentEntry('commit'), 'stray.md')
+    fs.writeFileSync(stray, 'left over from an older release')
+
+    cli.refreshSkills(path.join(project, '.claude', 'skills'), '.claude/skills', 'claude', ['commit'], () => {})
+
+    assert.ok(!fs.existsSync(stray))
+    assert.ok(cli.isLegacyCopy(path.join(project, '.claude', 'skills'), 'commit'))
+    assert.ok(!fs.existsSync(central('commit')))
   })
 
   it('updates the central copy through the link and keeps the link', () => {
@@ -562,15 +618,16 @@ describe('help', () => {
     const { status, stdout } = run('help')
 
     assert.equal(status, 0)
-    for (const command of ['list', 'install', 'update', 'remove', 'delete', 'version']) {
+    for (const command of ['list', 'install', 'update', 'delete', 'version']) {
       assert.match(stdout, new RegExp(`^ {2}${command}\\b`, 'm'))
     }
   })
 
-  it('documents delete as an alias for remove', () => {
+  it('documents delete as the only way to uninstall', () => {
     const { stdout } = run('help')
 
-    assert.match(stdout, /^ {2}delete {12}Alias for remove$/m)
+    assert.match(stdout, /^ {2}delete {12}Interactive wizard/m)
+    assert.doesNotMatch(stdout, /^ {2}remove\b/m)
   })
 
   it('documents update as an interactive wizard', () => {

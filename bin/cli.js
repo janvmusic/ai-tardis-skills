@@ -113,7 +113,36 @@ function installSkill(scope, agent, skill) {
   return 'installed'
 }
 
-function removeSkill(scope, agent, skill) {
+function readPreserved(dir) {
+  return PRESERVED_ON_UPDATE
+    .map(rel => [rel, path.join(dir, rel)])
+    .filter(([, filePath]) => fs.existsSync(filePath))
+    .map(([rel, filePath]) => [rel, fs.readFileSync(filePath)])
+}
+
+function writePreserved(dir, preserved) {
+  preserved.forEach(([rel, contents]) => {
+    const filePath = path.join(dir, rel)
+    fs.mkdirSync(path.dirname(filePath), { recursive: true })
+    fs.writeFileSync(filePath, contents)
+  })
+}
+
+function isLegacyCopy(dest, skill) {
+  return Boolean(fs.lstatSync(path.join(dest, skill), { throwIfNoEntry: false })?.isDirectory())
+}
+
+function migrateSkill(scope, agent, skill) {
+  const target = path.join(resolveDestFor(agent, scope), skill)
+  const central = path.join(centralDirFor(scope), skill)
+  const preserved = readPreserved(target)
+  const fresh = !fs.existsSync(central)
+  fs.rmSync(target, { recursive: true, force: true })
+  installSkill(scope, agent, skill)
+  if (fresh) writePreserved(central, preserved)
+}
+
+function deleteSkill(scope, agent, skill) {
   fs.rmSync(path.join(resolveDestFor(agent, scope), skill), { recursive: true, force: true })
   const central = path.join(centralDirFor(scope), skill)
   const stillLinked = Object.keys(AI_TARGETS).some(a =>
@@ -227,7 +256,7 @@ async function installWizard() {
   let installed = 0
   selected.forEach(s => {
     if (installSkill(scope, agent, s) === 'conflict') {
-      p.log.warn(`Skipped "${s}" — ${destLabel}/${s} already exists and is not a link to ${centralLabel}/${s}. Remove it first.`)
+      p.log.warn(`Skipped "${s}" — ${destLabel}/${s} already exists and is not a link to ${centralLabel}/${s}. Delete it first.`)
       return
     }
     installed++
@@ -246,21 +275,15 @@ function refreshSkills(dest, destLabel, agent, targets, log) {
   let updated = 0
   targets.forEach(s => {
     if (!available.includes(s)) {
-      log(`Skipped "${s}" — no longer part of ai-tardis-skills. Remove it with "tardis-ai remove".`)
+      log(`Skipped "${s}" — no longer part of ai-tardis-skills. Delete it with "tardis-ai delete".`)
       return
     }
     const target = fs.realpathSync(path.join(dest, s))
-    const preserved = PRESERVED_ON_UPDATE
-      .map(rel => path.join(target, rel))
-      .filter(filePath => fs.existsSync(filePath))
-      .map(filePath => [filePath, fs.readFileSync(filePath)])
+    const preserved = readPreserved(target)
     // Replace instead of merge so files dropped upstream don't linger.
     fs.rmSync(target, { recursive: true, force: true })
     copyDir(path.join(SKILLS_SRC, s), target)
-    preserved.forEach(([filePath, contents]) => {
-      fs.mkdirSync(path.dirname(filePath), { recursive: true })
-      fs.writeFileSync(filePath, contents)
-    })
+    writePreserved(target, preserved)
     log(`Updated "${s}" in ${destLabel}/${s} (${agent})`)
     updated++
   })
@@ -282,11 +305,23 @@ async function updateWizard() {
   })
   if (p.isCancel(selected)) return cancelWizard()
 
+  const centralLabel = centralLabelFor(scope)
+  const legacy = selected.filter(s => isLegacyCopy(dest, s))
+  let migrate = false
+  if (legacy.length > 0) {
+    p.log.warn(`${legacy.join(', ')} ${legacy.length === 1 ? 'is a plain copy' : 'are plain copies'} in ${destLabel}, an old install layout. Skills now live in ${centralLabel} and are linked from ${destLabel}.`)
+    migrate = await p.confirm({ message: `Delete the old ${legacy.length === 1 ? 'copy' : 'copies'} and link ${legacy.length === 1 ? 'it' : 'them'} to ${centralLabel}?` })
+    if (p.isCancel(migrate)) return cancelWizard()
+  }
+
   p.note(
     [
       `Scope: ${scope === 'global' ? 'Global' : 'Project'}`,
       `Agent: ${AGENT_LABELS[agent]}`,
       `Skills: ${selected.join(', ')}`,
+      ...(legacy.length > 0
+        ? [`Old copies: ${migrate ? `deleted and linked to ${centralLabel}` : 'kept and updated in place'}`]
+        : []),
     ].join('\n'),
     'Summary'
   )
@@ -294,6 +329,12 @@ async function updateWizard() {
   const confirmed = await p.confirm({ message: 'Update these skills?' })
   if (p.isCancel(confirmed) || !confirmed) return cancelWizard('Nothing updated.')
 
+  if (migrate) {
+    legacy.forEach(s => {
+      migrateSkill(scope, agent, s)
+      p.log.success(`Replaced the old copy of "${s}" with a link to ${centralLabel}/${s} (${agent})`)
+    })
+  }
   const updated = refreshSkills(dest, destLabel, agent, selected, message => p.log.success(message))
   p.outro(`${updated} skill${updated === 1 ? '' : 's'} updated to ai-tardis-skills v${PKG.version}.`)
   notifyIfOutdated()
@@ -339,16 +380,15 @@ function isNewer(a, b) {
   return false
 }
 
-// Non-interactive default: remove everything installed at the Project/--ai target.
-async function removeWizard(invokedAs) {
-  p.intro(`tardis-ai ${invokedAs}`)
+async function deleteWizard() {
+  p.intro('tardis-ai delete')
 
-  const location = await pickLocation('Remove from where?', 'No skills installed in any Project or Global location.', true)
+  const location = await pickLocation('Delete from where?', 'No skills installed in any Project or Global location.', true)
   if (!location) return
   const { scope, agent, destLabel, installed } = location
 
   const selected = await p.multiselect({
-    message: 'Which skills do you want to remove?',
+    message: 'Which skills do you want to delete?',
     options: installed.map(s => ({ value: s, label: s })),
     required: true,
   })
@@ -363,14 +403,14 @@ async function removeWizard(invokedAs) {
     'Summary'
   )
 
-  const confirmed = await p.confirm({ message: 'Remove these skills?' })
-  if (p.isCancel(confirmed) || !confirmed) return cancelWizard('Nothing removed.')
+  const confirmed = await p.confirm({ message: 'Delete these skills?' })
+  if (p.isCancel(confirmed) || !confirmed) return cancelWizard('Nothing deleted.')
 
   selected.forEach(s => {
-    removeSkill(scope, agent, s)
-    p.log.success(`Removed "${s}" from ${destLabel}/${s} (${agent})`)
+    deleteSkill(scope, agent, s)
+    p.log.success(`Deleted "${s}" from ${destLabel}/${s} (${agent})`)
   })
-  p.outro(`${selected.length} skill${selected.length === 1 ? '' : 's'} removed.`)
+  p.outro(`${selected.length} skill${selected.length === 1 ? '' : 's'} deleted.`)
 }
 
 function copyDir(src, dest) {
@@ -397,8 +437,7 @@ function help() {
   console.log('  list              Show available skills (--installed shows what\'s installed)')
   console.log('  install           Interactive wizard: scope, AI agent, then pick skills')
   console.log('  update            Interactive wizard: scope, AI agent, then pick skills to refresh')
-  console.log('  remove            Interactive wizard: scope, AI agent, then pick skills to remove')
-  console.log('  delete            Alias for remove')
+  console.log('  delete            Interactive wizard: scope, AI agent, then pick skills to delete')
   console.log('  version           Print the installed tardis-ai version')
   console.log('')
   console.log('Options:')
@@ -464,9 +503,8 @@ async function main() {
     case 'update':
       await interactiveOnly(command, updateWizard)
       break
-    case 'remove':
     case 'delete':
-      await interactiveOnly(command, () => removeWizard(command))
+      await interactiveOnly(command, deleteWizard)
       break
     case 'sexy':
       tardis()
@@ -502,7 +540,9 @@ module.exports = {
   centralDirFor,
   centralLabelFor,
   installSkill,
-  removeSkill,
+  deleteSkill,
+  isLegacyCopy,
+  migrateSkill,
   resolveDestFor,
   destLabelFor,
 }

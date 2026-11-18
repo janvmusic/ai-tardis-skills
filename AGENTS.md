@@ -111,29 +111,29 @@ permission entry instead.
   are exported from `bin/cli.js` and unit-tested directly, without spawning a
   process — use this for logic that doesn't need the interactive wizard.
 - Any change to `bin/cli.js` needs matching coverage in the spec. The
-  interactive install/remove wizard itself (raw-mode arrow-key UI) can't be
+  interactive install/delete wizard itself (raw-mode arrow-key UI) can't be
   driven through `spawnSync`-based specs, since piped stdin isn't a real TTY —
   that part is manual-test-only.
 
 ### The CLI
 
 - `bin/cli.js` has one real runtime dependency: `@clack/prompts`, for the
-  interactive install/remove wizard (scope, AI agent, skill checklist,
+  interactive install/delete wizard (scope, AI agent, skill checklist,
   confirm). It requires Node >= 20.12.0 — reflected in `package.json`'s
   `engines` field. Don't add further dependencies without good reason; this
   one exists because hand-rolling raw-mode terminal UI from scratch is a much
   larger maintenance burden than one well-maintained library.
-- Commands: `list`, `install`, `update`, `remove`/`delete`, `version`, `help`.
-- `install`, `update` and `remove`/`delete` are wizard-only, with no
+- Commands: `list`, `install`, `update`, `delete`, `version`, `help`.
+- `install`, `update` and `delete` are wizard-only, with no
   arguments and no `--yes` flag. `install` walks scope (Project or Global) →
   AI agent (Claude/OpenCode/Codex) → skill checklist → summary → confirm.
-  `update` and `remove` skip straight to a picker of the scope/agent
+  `update` and `delete` skip straight to a picker of the scope/agent
   combinations that actually have skills installed (or to the checklist when
   only one does). Without a TTY they exit 1 with "requires an interactive
   terminal", so the specs cover only argument rejection and the pure helpers
   (`refreshSkills`, `installedLocations`); the wizards are manual-test-only.
-- `update` and `remove` list only skills that ship in the package, so skills
-  installed another way are never offered. `remove` also lists `RETIRED_SKILLS`
+- `update` and `delete` list only skills that ship in the package, so skills
+  installed another way are never offered. `delete` also lists `RETIRED_SKILLS`
   (renamed or dropped skills) so they can still be cleaned up.
 - `--ai=<name>` selects the target for `list --installed`, parsed from any
   argument position in both `--ai=x` and `--ai x` forms. The wizards ask for
@@ -155,12 +155,16 @@ permission entry instead.
   `~/.tardis/skills` (Global), the source of truth, and symlinks it from the
   agent directory. A second agent reuses the copy and adds only a link. An
   existing real directory or foreign link at the agent path is reported and
-  skipped, never overwritten. `remove` deletes the link and deletes the central
+  skipped, never overwritten. `delete` deletes the link and deletes the central
   copy once no agent links to it.
 - `update` replaces a skill folder rather than merging, so files dropped
   upstream disappear. It resolves the agent link and refreshes the central
-  copy, so the link keeps working and every agent sees the update. A skill that no longer exists upstream is reported and
-  skipped, never deleted.
+  copy, so the link keeps working and every agent sees the update. A skill
+  still installed as a plain copy (old layout) is flagged: the wizard asks
+  whether to delete it and link it to the central copy, carrying over
+  `PRESERVED_ON_UPDATE` files; declining updates the old copy in place.
+  `delete` deletes old copies and links alike. A skill that no longer exists
+  upstream is reported and skipped, never deleted.
 
 ## Releasing
 
