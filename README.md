@@ -27,6 +27,7 @@ Every skill except `commit` and `create-pr` runs only when you invoke it by name
 | [unravel](skills/unravel/SKILL.md) | Interviews you about a plan until every decision branch is resolved |
 | [rca-investigator](skills/rca-investigator/SKILL.md) | Finds the root cause of a bug with 5-Why before proposing fixes |
 | [read-jira-ticket](skills/read-jira-ticket/SKILL.md) | Loads a Jira ticket via ACLI and summarizes it |
+| [ticket-writer](skills/ticket-writer/SKILL.md) | Drafts a Jira ticket description in Summary plus Acceptance Criteria format |
 
 Beta (behavior may change): [polish](skills/polish/SKILL.md) cleans up style in a changelist without changing behavior.
 
@@ -43,6 +44,7 @@ OpenCode has no per-skill flag. To require approval before these load, add to `o
       "unravel": "ask",
       "rca-investigator": "ask",
       "read-jira-ticket": "ask",
+      "ticket-writer": "ask",
       "polish": "ask"
     }
   }
