@@ -151,8 +151,15 @@ permission entry instead.
 
 - `list --installed` shows what's actually present in the Project/`--ai`
   target. Plain `list` is unchanged — names only, no descriptions or status.
+- `install` copies each skill once into `.tardis/skills` (Project) or
+  `~/.tardis/skills` (Global), the source of truth, and symlinks it from the
+  agent directory. A second agent reuses the copy and adds only a link. An
+  existing real directory or foreign link at the agent path is reported and
+  skipped, never overwritten. `remove` deletes the link and deletes the central
+  copy once no agent links to it.
 - `update` replaces a skill folder rather than merging, so files dropped
-  upstream disappear. A skill that no longer exists upstream is reported and
+  upstream disappear. It resolves the agent link and refreshes the central
+  copy, so the link keeps working and every agent sees the update. A skill that no longer exists upstream is reported and
   skipped, never deleted.
 
 ## Releasing

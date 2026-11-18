@@ -19,6 +19,8 @@ const GLOBAL_AI_TARGETS = {
   opencode: path.join(os.homedir(), '.config', 'opencode', 'skills'),
   agents: path.join(os.homedir(), '.agents', 'skills'),
 }
+const CENTRAL_TARGET = path.join('.tardis', 'skills')
+const GLOBAL_CENTRAL = path.join(os.homedir(), '.tardis', 'skills')
 const AGENT_LABELS = {
   claude: 'Claude Code',
   opencode: 'OpenCode',
@@ -70,6 +72,14 @@ function destLabelFor(agent, scope) {
     : AI_TARGETS[agent]
 }
 
+function centralDirFor(scope) {
+  return scope === 'global' ? GLOBAL_CENTRAL : path.join(process.cwd(), CENTRAL_TARGET)
+}
+
+function centralLabelFor(scope) {
+  return scope === 'global' ? `~/${CENTRAL_TARGET}` : CENTRAL_TARGET
+}
+
 function availableSkills() {
   return fs.readdirSync(SKILLS_SRC).filter(f =>
     fs.statSync(path.join(SKILLS_SRC, f)).isDirectory()
@@ -79,8 +89,37 @@ function availableSkills() {
 function installedSkills(dest) {
   if (!fs.existsSync(dest)) return []
   return fs.readdirSync(dest).filter(f =>
-    fs.statSync(path.join(dest, f)).isDirectory()
+    fs.statSync(path.join(dest, f), { throwIfNoEntry: false })?.isDirectory()
   )
+}
+
+function linksTo(entry, central) {
+  try {
+    return fs.realpathSync(entry) === fs.realpathSync(central)
+  } catch {
+    return false
+  }
+}
+
+function installSkill(scope, agent, skill) {
+  const dest = resolveDestFor(agent, scope)
+  const target = path.join(dest, skill)
+  const central = path.join(centralDirFor(scope), skill)
+  if (fs.lstatSync(target, { throwIfNoEntry: false }) && !linksTo(target, central)) return 'conflict'
+  if (!fs.existsSync(central)) copyDir(path.join(SKILLS_SRC, skill), central)
+  fs.mkdirSync(dest, { recursive: true })
+  fs.rmSync(target, { force: true })
+  fs.symlinkSync(path.relative(fs.realpathSync(dest), fs.realpathSync(central)), target, 'dir')
+  return 'installed'
+}
+
+function removeSkill(scope, agent, skill) {
+  fs.rmSync(path.join(resolveDestFor(agent, scope), skill), { recursive: true, force: true })
+  const central = path.join(centralDirFor(scope), skill)
+  const stillLinked = Object.keys(AI_TARGETS).some(a =>
+    linksTo(path.join(resolveDestFor(a, scope), skill), central)
+  )
+  if (!stillLinked) fs.rmSync(central, { recursive: true, force: true })
 }
 
 function managedSkills(dest, includeRetired) {
@@ -168,14 +207,16 @@ async function installWizard() {
   })
   if (p.isCancel(selected)) return cancelWizard()
 
-  const dest = resolveDestFor(agent, scope)
   const destLabel = destLabelFor(agent, scope)
+  const centralLabel = centralLabelFor(scope)
 
   p.note(
     [
       `Scope: ${scope === 'global' ? 'Global' : 'Project'}`,
       `Agent: ${AGENT_LABELS[agent]}`,
       `Skills: ${selected.join(', ')}`,
+      `Source of truth: ${centralLabel}`,
+      `Links: ${destLabel}`,
     ].join('\n'),
     'Summary'
   )
@@ -183,11 +224,16 @@ async function installWizard() {
   const confirmed = await p.confirm({ message: 'Install these skills?' })
   if (p.isCancel(confirmed) || !confirmed) return cancelWizard('Nothing installed.')
 
+  let installed = 0
   selected.forEach(s => {
-    copyDir(path.join(SKILLS_SRC, s), path.join(dest, s))
-    p.log.success(`Installed "${s}" to ${destLabel}/${s} (${agent})`)
+    if (installSkill(scope, agent, s) === 'conflict') {
+      p.log.warn(`Skipped "${s}" — ${destLabel}/${s} already exists and is not a link to ${centralLabel}/${s}. Remove it first.`)
+      return
+    }
+    installed++
+    p.log.success(`Installed "${s}" to ${centralLabel}/${s}, linked from ${destLabel}/${s} (${agent})`)
   })
-  p.outro(`${selected.length} skill${selected.length === 1 ? '' : 's'} installed.`)
+  p.outro(`${installed} skill${installed === 1 ? '' : 's'} installed.`)
 }
 
 function cancelWizard(message = 'Cancelled. Nothing changed.') {
@@ -203,7 +249,7 @@ function refreshSkills(dest, destLabel, agent, targets, log) {
       log(`Skipped "${s}" — no longer part of ai-tardis-skills. Remove it with "tardis-ai remove".`)
       return
     }
-    const target = path.join(dest, s)
+    const target = fs.realpathSync(path.join(dest, s))
     const preserved = PRESERVED_ON_UPDATE
       .map(rel => path.join(target, rel))
       .filter(filePath => fs.existsSync(filePath))
@@ -299,7 +345,7 @@ async function removeWizard(invokedAs) {
 
   const location = await pickLocation('Remove from where?', 'No skills installed in any Project or Global location.', true)
   if (!location) return
-  const { scope, agent, dest, destLabel, installed } = location
+  const { scope, agent, destLabel, installed } = location
 
   const selected = await p.multiselect({
     message: 'Which skills do you want to remove?',
@@ -321,7 +367,7 @@ async function removeWizard(invokedAs) {
   if (p.isCancel(confirmed) || !confirmed) return cancelWizard('Nothing removed.')
 
   selected.forEach(s => {
-    fs.rmSync(path.join(dest, s), { recursive: true, force: true })
+    removeSkill(scope, agent, s)
     p.log.success(`Removed "${s}" from ${destLabel}/${s} (${agent})`)
   })
   p.outro(`${selected.length} skill${selected.length === 1 ? '' : 's'} removed.`)
@@ -453,6 +499,10 @@ module.exports = {
   installedLocations,
   refreshSkills,
   copyDir,
+  centralDirFor,
+  centralLabelFor,
+  installSkill,
+  removeSkill,
   resolveDestFor,
   destLabelFor,
 }

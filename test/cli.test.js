@@ -407,6 +407,145 @@ describe('internals: installedLocations filtering', () => {
   })
 })
 
+describe('internals: central install', () => {
+  const inProject = fn => {
+    const original = process.cwd()
+    process.chdir(project)
+    try {
+      return fn()
+    } finally {
+      process.chdir(original)
+    }
+  }
+  const central = skill => path.join(project, '.tardis', 'skills', skill)
+  const agentEntry = (skill, dir = path.join('.claude', 'skills')) => path.join(project, dir, skill)
+  const isLinkTo = (entry, target) =>
+    fs.lstatSync(entry).isSymbolicLink() && fs.realpathSync(entry) === fs.realpathSync(target)
+
+  it('maps scopes to the central directory', () => {
+    assert.equal(cli.centralDirFor('project'), path.join(process.cwd(), '.tardis', 'skills'))
+    assert.equal(cli.centralDirFor('global'), path.join(os.homedir(), '.tardis', 'skills'))
+    assert.equal(cli.centralLabelFor('project'), path.join('.tardis', 'skills'))
+    assert.equal(cli.centralLabelFor('global'), '~/.tardis/skills')
+  })
+
+  it('copies the skill once to the central directory and links the agent to it', () => {
+    const status = inProject(() => cli.installSkill('project', 'claude', 'commit'))
+
+    assert.equal(status, 'installed')
+    assert.ok(fs.existsSync(path.join(central('commit'), 'SKILL.md')))
+    assert.ok(isLinkTo(agentEntry('commit'), central('commit')))
+    assert.ok(installed('commit'), 'the agent path resolves to the skill')
+  })
+
+  it('writes a relative link so the project can move', () => {
+    inProject(() => cli.installSkill('project', 'claude', 'commit'))
+
+    assert.ok(!path.isAbsolute(fs.readlinkSync(agentEntry('commit'))))
+  })
+
+  it('reuses the central copy for a second agent and adds only a link', () => {
+    inProject(() => cli.installSkill('project', 'claude', 'commit'))
+    const marker = path.join(central('commit'), 'marker.md')
+    fs.writeFileSync(marker, 'edited in the source of truth')
+
+    inProject(() => cli.installSkill('project', 'opencode', 'commit'))
+
+    assert.ok(isLinkTo(agentEntry('commit', path.join('.opencode', 'skill')), central('commit')))
+    assert.ok(fs.existsSync(marker), 'the central copy is not recopied')
+    assert.ok(fs.existsSync(path.join(agentEntry('commit', path.join('.opencode', 'skill')), 'marker.md')))
+  })
+
+  it('is idempotent when the link already exists', () => {
+    inProject(() => cli.installSkill('project', 'claude', 'commit'))
+
+    const status = inProject(() => cli.installSkill('project', 'claude', 'commit'))
+
+    assert.equal(status, 'installed')
+    assert.ok(isLinkTo(agentEntry('commit'), central('commit')))
+  })
+
+  it('reports a real directory at the agent path and leaves it untouched', () => {
+    const existing = agentEntry('commit')
+    fs.mkdirSync(existing, { recursive: true })
+    fs.writeFileSync(path.join(existing, 'local.md'), 'hand-made copy')
+
+    const status = inProject(() => cli.installSkill('project', 'claude', 'commit'))
+
+    assert.equal(status, 'conflict')
+    assert.ok(!fs.lstatSync(existing).isSymbolicLink())
+    assert.equal(fs.readFileSync(path.join(existing, 'local.md'), 'utf8'), 'hand-made copy')
+    assert.ok(!fs.existsSync(central('commit')), 'nothing is copied centrally on conflict')
+  })
+
+  it('reports a link that points somewhere else', () => {
+    const elsewhere = path.join(project, 'elsewhere')
+    fs.mkdirSync(elsewhere)
+    fs.mkdirSync(path.dirname(agentEntry('commit')), { recursive: true })
+    fs.symlinkSync(elsewhere, agentEntry('commit'), 'dir')
+
+    const status = inProject(() => cli.installSkill('project', 'claude', 'commit'))
+
+    assert.equal(status, 'conflict')
+    assert.equal(fs.realpathSync(agentEntry('commit')), fs.realpathSync(elsewhere))
+  })
+
+  it('lists skills reached through links and ignores broken ones', () => {
+    inProject(() => cli.installSkill('project', 'claude', 'commit'))
+    fs.symlinkSync(central('missing'), agentEntry('missing'), 'dir')
+
+    assert.deepEqual(cli.installedSkills(path.join(project, '.claude', 'skills')), ['commit'])
+  })
+
+  it('removes only the agent link while another agent still uses the skill', () => {
+    inProject(() => {
+      cli.installSkill('project', 'claude', 'commit')
+      cli.installSkill('project', 'opencode', 'commit')
+      cli.removeSkill('project', 'claude', 'commit')
+    })
+
+    assert.ok(!fs.existsSync(agentEntry('commit')))
+    assert.ok(fs.existsSync(path.join(central('commit'), 'SKILL.md')))
+    assert.ok(installed('commit', path.join('.opencode', 'skill')))
+  })
+
+  it('removes the central copy with the last link', () => {
+    inProject(() => {
+      cli.installSkill('project', 'claude', 'commit')
+      cli.removeSkill('project', 'claude', 'commit')
+    })
+
+    assert.ok(!fs.existsSync(agentEntry('commit')))
+    assert.ok(!fs.existsSync(central('commit')))
+  })
+
+  it('removes a legacy copied directory like before', () => {
+    seed()
+
+    inProject(() => cli.removeSkill('project', 'claude', 'commit'))
+
+    assert.ok(!fs.existsSync(agentEntry('commit')))
+  })
+
+  it('updates the central copy through the link and keeps the link', () => {
+    inProject(() => cli.installSkill('project', 'claude', 'commit'))
+    const conventions = path.join(central('commit'), 'references', 'conventions.md')
+    fs.mkdirSync(path.dirname(conventions), { recursive: true })
+    fs.writeFileSync(conventions, 'custom convention')
+    const stray = path.join(central('commit'), 'stray.md')
+    fs.writeFileSync(stray, 'left over from an older release')
+
+    const updated = cli.refreshSkills(
+      path.join(project, '.claude', 'skills'), '.claude/skills', 'claude', ['commit'], () => {}
+    )
+
+    assert.equal(updated, 1)
+    assert.ok(isLinkTo(agentEntry('commit'), central('commit')))
+    assert.ok(!fs.existsSync(stray))
+    assert.equal(fs.readFileSync(conventions, 'utf8'), 'custom convention')
+  })
+})
+
 describe('version', () => {
   for (const flag of ['version', '--version', '-v']) {
     it(`prints the package version for "${flag}"`, () => {
